@@ -15,9 +15,11 @@ class PopularController extends Controller
     public function index(): View
     {
         $popularMovies = $this->getPopularMovies();
+        $recentViews = $this->getRecentViews();
 
         return view('popular.index', [
             'movies' => $popularMovies,
+            'recentViews' => $recentViews,
         ]);
     }
 
@@ -43,5 +45,26 @@ class PopularController extends Controller
             /** @phpstan-ignore-next-line Property exists via selectRaw */
             'click_count' => (int) $click->click_count,
         ]);
+    }
+
+    /**
+     * Get the most recent movie views for the sidebar.
+     *
+     * @return Collection<int, array{id: int, tmdb_movie_id: int, movie_title: string, poster_url: ?string, clicked_at: string}>
+     */
+    private function getRecentViews(): Collection
+    {
+        return MovieClick::query()
+            ->select(['id', 'tmdb_movie_id', 'movie_title', 'poster_path', 'clicked_at'])
+            ->orderByDesc('clicked_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (MovieClick $click): array => [
+                'id' => $click->id,
+                'tmdb_movie_id' => $click->tmdb_movie_id,
+                'movie_title' => $click->movie_title,
+                'poster_url' => TmdbService::posterUrl($click->poster_path, 'w185'),
+                'clicked_at' => $click->clicked_at->diffForHumans(),
+            ]);
     }
 }
