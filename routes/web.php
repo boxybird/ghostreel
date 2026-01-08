@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GenreController;
 use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\PopularController;
 use App\Http\Controllers\SearchController;
@@ -14,3 +15,6 @@ Route::get('/heatmap-data', [HeatmapController::class, 'heatmapData'])->name('he
 Route::get('/popular', [PopularController::class, 'index'])->name('popular.index');
 
 Route::get('/search', [SearchController::class, 'search'])->name('search');
+
+Route::get('/genres', [GenreController::class, 'index'])->name('genres.index');
+Route::get('/genres/{genreId}', [GenreController::class, 'show'])->name('genres.show')->whereNumber('genreId');

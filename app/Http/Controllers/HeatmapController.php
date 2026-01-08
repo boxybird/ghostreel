@@ -39,10 +39,12 @@ class HeatmapController extends Controller
         });
 
         $recentViews = $this->getRecentViews();
+        $genres = $this->tmdbService->getGenres();
 
         return view('heatmap.index', [
             'movies' => $movies,
             'recentViews' => $recentViews,
+            'genres' => $genres,
             'currentPage' => $trendingData['page'],
             'totalPages' => $trendingData['total_pages'],
             'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],

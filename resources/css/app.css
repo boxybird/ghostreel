@@ -98,3 +98,34 @@ dialog#search-dialog::backdrop {
         opacity: 1;
     }
 }
+
+/* Genre Filter Chips */
+.genre-chip {
+    background: var(--color-dark-surface);
+    color: var(--color-text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.genre-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.genre-chip-active,
+.genre-chip-active:hover {
+    background: var(--color-neon-cyan);
+    color: var(--color-dark-bg);
+    border-color: var(--color-neon-cyan);
+    font-weight: 600;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}

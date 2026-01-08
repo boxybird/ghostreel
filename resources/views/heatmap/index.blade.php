@@ -109,6 +109,34 @@
                         <kbd class="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">⌘K</kbd>
                     </button>
                 </div>
+
+                <!-- Genre Filter Chips -->
+                <div class="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="genre-chips">
+                    <!-- All (Trending) Chip -->
+                    <button
+                        type="button"
+                        hx-get="{{ route('heatmap.trending') }}"
+                        hx-target="#movie-grid"
+                        hx-swap="innerHTML"
+                        class="genre-chip genre-chip-active shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                        data-genre-id="all"
+                    >
+                        All
+                    </button>
+
+                    @foreach($genres as $genre)
+                        <button
+                            type="button"
+                            hx-get="{{ route('genres.show', $genre['id']) }}"
+                            hx-target="#movie-grid"
+                            hx-swap="innerHTML"
+                            class="genre-chip shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+                            data-genre-id="{{ $genre['id'] }}"
+                        >
+                            {{ $genre['name'] }}
+                        </button>
+                    @endforeach
+                </div>
             </header>
 
             <!-- Movie Grid -->
@@ -220,6 +248,20 @@
                 e.preventDefault();
                 openSearchDialog();
             }
+        });
+
+        // =====================
+        // Genre Filter Chips
+        // =====================
+        document.querySelectorAll('.genre-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                // Remove active class from all chips
+                document.querySelectorAll('.genre-chip').forEach(c => {
+                    c.classList.remove('genre-chip-active');
+                });
+                // Add active class to clicked chip
+                this.classList.add('genre-chip-active');
+            });
         });
 
         // =====================

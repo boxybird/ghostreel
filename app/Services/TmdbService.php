@@ -90,6 +90,67 @@ class TmdbService
     }
 
     /**
+     * Get list of movie genres from TMDB.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function getGenres(): Collection
+    {
+        $cacheKey = 'tmdb_movie_genres';
+
+        return Cache::remember($cacheKey, now()->addHours(24), function (): Collection {
+            /** @var Response $response */
+            $response = $this->client()->get('/genre/movie/list');
+
+            if ($response->failed()) {
+                return collect();
+            }
+
+            /** @var array<int, array{id: int, name: string}> $genres */
+            $genres = $response->json('genres', []);
+
+            return collect($genres);
+        });
+    }
+
+    /**
+     * Discover movies by genre.
+     *
+     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>, page: int, total_pages: int}
+     */
+    public function discoverMoviesByGenre(int $genreId, int $page = 1): array
+    {
+        $cacheKey = "tmdb_discover_genre_{$genreId}_page_{$page}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($genreId, $page): array {
+            /** @var Response $response */
+            $response = $this->client()->get('/discover/movie', [
+                'with_genres' => $genreId,
+                'sort_by' => 'popularity.desc',
+                'page' => $page,
+                'include_adult' => false,
+            ]);
+
+            if ($response->failed()) {
+                return [
+                    'movies' => collect(),
+                    'page' => $page,
+                    'total_pages' => 1,
+                ];
+            }
+
+            /** @var array<int, array<string, mixed>> $results */
+            $results = $response->json('results', []);
+
+            return [
+                'movies' => collect($results)->map(fn (array $movie): array => $this->transformMovie($movie)),
+                'page' => (int) $response->json('page', 1),
+                'total_pages' => (int) $response->json('total_pages', 1),
+            ];
+        });
+    }
+
+    /**
      * Get details for a specific movie.
      *
      * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}|null
