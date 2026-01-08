@@ -1,7 +1,33 @@
 {{-- Genre movies partial for HTMX genre filtering --}}
 
-{{-- Genre Header --}}
-<div class="mb-4 flex items-center justify-between">
+{{-- OOB Swap: Update genre chips to show active state --}}
+<div id="genre-chips" hx-swap-oob="true" class="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <button
+        type="button"
+        hx-get="{{ route('heatmap.trending') }}"
+        hx-target="#movie-grid"
+        hx-swap="innerHTML"
+        class="genre-chip shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+        data-genre-id="all"
+    >
+        All
+    </button>
+    @foreach($genres as $genre)
+        <button
+            type="button"
+            hx-get="{{ route('genres.show', $genre['id']) }}"
+            hx-target="#movie-grid"
+            hx-swap="innerHTML"
+            class="genre-chip {{ $genre['id'] == $genreId ? 'genre-chip-active' : '' }} shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+            data-genre-id="{{ $genre['id'] }}"
+        >
+            {{ $genre['name'] }}
+        </button>
+    @endforeach
+</div>
+
+{{-- Genre Header - Full width above grid --}}
+<div class="col-span-full mb-4 flex items-center justify-between">
     <div>
         <h2 class="text-xl font-bold text-text-primary">{{ $genreName }} Movies</h2>
         <p class="text-sm text-text-muted">Browse popular {{ strtolower($genreName) }} movies</p>

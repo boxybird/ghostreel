@@ -251,20 +251,6 @@
         });
 
         // =====================
-        // Genre Filter Chips
-        // =====================
-        document.querySelectorAll('.genre-chip').forEach(chip => {
-            chip.addEventListener('click', function() {
-                // Remove active class from all chips
-                document.querySelectorAll('.genre-chip').forEach(c => {
-                    c.classList.remove('genre-chip-active');
-                });
-                // Add active class to clicked chip
-                this.classList.add('genre-chip-active');
-            });
-        });
-
-        // =====================
         // Movie Click Tracking
         // =====================
         async function logMovieClick(button) {

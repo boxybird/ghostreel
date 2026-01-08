@@ -73,8 +73,12 @@ class HeatmapController extends Controller
             ];
         });
 
+        // Include genres for OOB swap when returning to page 1 (filter cleared)
+        $genres = $page === 1 ? $this->tmdbService->getGenres() : null;
+
         return view('heatmap.partials.movie-cards', [
             'movies' => $movies,
+            'genres' => $genres,
             'currentPage' => $trendingData['page'],
             'totalPages' => $trendingData['total_pages'],
             'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],

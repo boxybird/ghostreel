@@ -1,4 +1,33 @@
 {{-- Movie cards partial for HTMX Load More --}}
+
+{{-- OOB Swap: Reset genre chips to "All" active state (only for HTMX requests on page 1) --}}
+@if($currentPage === 1 && isset($genres) && request()->header('HX-Request'))
+<div id="genre-chips" hx-swap-oob="true" class="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <button
+        type="button"
+        hx-get="{{ route('heatmap.trending') }}"
+        hx-target="#movie-grid"
+        hx-swap="innerHTML"
+        class="genre-chip genre-chip-active shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+        data-genre-id="all"
+    >
+        All
+    </button>
+    @foreach($genres as $genre)
+        <button
+            type="button"
+            hx-get="{{ route('genres.show', $genre['id']) }}"
+            hx-target="#movie-grid"
+            hx-swap="innerHTML"
+            class="genre-chip shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
+            data-genre-id="{{ $genre['id'] }}"
+        >
+            {{ $genre['name'] }}
+        </button>
+    @endforeach
+</div>
+@endif
+
 @foreach($movies as $movie)
     <button
         type="button"

@@ -52,6 +52,7 @@ class GenreController extends Controller
 
         return view('genre.movies', [
             'movies' => $moviesWithData,
+            'genres' => $genres,
             'genreId' => $genreId,
             'genreName' => $genreName,
             'currentPage' => $genreData['page'],
