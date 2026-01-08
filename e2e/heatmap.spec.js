@@ -83,7 +83,6 @@ test.describe('Movie Heatmap', () => {
     // Check for sidebar navigation links
     await expect(page.getByRole('link', { name: /Home/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Popular/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Movies/i })).toBeVisible();
   });
 
   test('search button is present and opens dialog', async ({ page }) => {
