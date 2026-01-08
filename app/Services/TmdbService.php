@@ -151,17 +151,19 @@ class TmdbService
     }
 
     /**
-     * Get details for a specific movie.
+     * Get details for a specific movie with extended information.
      *
-     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}|null
+     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>}|null
      */
     public function getMovieDetails(int $movieId): ?array
     {
-        $cacheKey = "tmdb_movie_{$movieId}";
+        $cacheKey = "tmdb_movie_details_{$movieId}";
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES * 4), function () use ($movieId): ?array {
             /** @var Response $response */
-            $response = $this->client()->get("/movie/{$movieId}");
+            $response = $this->client()->get("/movie/{$movieId}", [
+                'append_to_response' => 'credits,similar',
+            ]);
 
             if ($response->failed()) {
                 return null;
@@ -170,8 +172,66 @@ class TmdbService
             /** @var array<string, mixed> $data */
             $data = $response->json();
 
-            return $this->transformMovie($data);
+            return $this->transformMovieDetails($data);
         });
+    }
+
+    /**
+     * Transform raw TMDB movie details response to our extended application format.
+     *
+     * @param  array<string, mixed>  $movie
+     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>}
+     */
+    private function transformMovieDetails(array $movie): array
+    {
+        /** @var array<int, array{id: int, name: string}> $genres */
+        $genres = $movie['genres'] ?? [];
+
+        /** @var array<string, mixed> $credits */
+        $credits = $movie['credits'] ?? [];
+
+        /** @var array<int, array<string, mixed>> $rawCast */
+        $rawCast = $credits['cast'] ?? [];
+
+        /** @var array<string, mixed> $similar */
+        $similar = $movie['similar'] ?? [];
+
+        /** @var array<int, array<string, mixed>> $rawSimilar */
+        $rawSimilar = $similar['results'] ?? [];
+
+        // Transform cast - limit to top 10
+        $cast = collect($rawCast)
+            ->take(10)
+            ->map(fn (array $person): array => [
+                'id' => $person['id'],
+                'name' => $person['name'],
+                'character' => $person['character'] ?? '',
+                'profile_path' => $person['profile_path'] ?? null,
+            ])
+            ->values()
+            ->all();
+
+        // Transform similar movies - limit to 6
+        $similarMovies = collect($rawSimilar)
+            ->take(6)
+            ->map(fn (array $m): array => $this->transformMovie($m))
+            ->values()
+            ->all();
+
+        return [
+            'id' => $movie['id'],
+            'title' => $movie['title'],
+            'poster_path' => $movie['poster_path'] ?? null,
+            'backdrop_path' => $movie['backdrop_path'] ?? null,
+            'overview' => $movie['overview'] ?? '',
+            'release_date' => $movie['release_date'] ?? '',
+            'vote_average' => (float) ($movie['vote_average'] ?? 0),
+            'runtime' => $movie['runtime'] ?? null,
+            'tagline' => $movie['tagline'] ?? null,
+            'genres' => $genres,
+            'cast' => $cast,
+            'similar' => $similarMovies,
+        ];
     }
 
     /**
@@ -190,6 +250,18 @@ class TmdbService
      * Build full backdrop URL from path.
      */
     public static function backdropUrl(?string $path, string $size = 'w1280'): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        return self::IMAGE_BASE_URL."/{$size}{$path}";
+    }
+
+    /**
+     * Build full profile image URL from path.
+     */
+    public static function profileUrl(?string $path, string $size = 'w185'): ?string
     {
         if ($path === null) {
             return null;

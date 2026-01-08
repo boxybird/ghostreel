@@ -58,9 +58,9 @@ it('returns empty collection when API fails', function (): void {
     expect($result['total_pages'])->toBe(1);
 });
 
-it('fetches movie details by ID', function (): void {
+it('fetches movie details by ID with credits and similar movies', function (): void {
     Http::fake([
-        'api.themoviedb.org/3/movie/456' => Http::response([
+        'api.themoviedb.org/3/movie/456*' => Http::response([
             'id' => 456,
             'title' => 'Specific Movie',
             'poster_path' => '/specific.jpg',
@@ -68,6 +68,23 @@ it('fetches movie details by ID', function (): void {
             'overview' => 'Specific overview',
             'release_date' => '2025-06-15',
             'vote_average' => 7.2,
+            'runtime' => 120,
+            'tagline' => 'A great tagline',
+            'genres' => [
+                ['id' => 28, 'name' => 'Action'],
+                ['id' => 12, 'name' => 'Adventure'],
+            ],
+            'credits' => [
+                'cast' => [
+                    ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg'],
+                    ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null],
+                ],
+            ],
+            'similar' => [
+                'results' => [
+                    ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5],
+                ],
+            ],
         ]),
     ]);
 
@@ -82,6 +99,19 @@ it('fetches movie details by ID', function (): void {
         'overview' => 'Specific overview',
         'release_date' => '2025-06-15',
         'vote_average' => 7.2,
+        'runtime' => 120,
+        'tagline' => 'A great tagline',
+        'genres' => [
+            ['id' => 28, 'name' => 'Action'],
+            ['id' => 12, 'name' => 'Adventure'],
+        ],
+        'cast' => [
+            ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg'],
+            ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null],
+        ],
+        'similar' => [
+            ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5],
+        ],
     ]);
 });
 

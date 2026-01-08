@@ -236,9 +236,10 @@
             `).join('');
         }
 
-        function updateClickCount(button) {
-            let badge = button.querySelector('[class*="absolute top-2 right-2"]');
-            if (badge) {
+        function updateClickCount(card) {
+            // Badge is now top-left
+            let badge = card.querySelector('[class*="absolute top-2 left-2"]');
+            if (badge && badge.classList.contains('z-20')) {
                 const currentCount = parseInt(badge.textContent) || 0;
                 const newCount = currentCount + 1;
                 badge.textContent = `${newCount} ${newCount === 1 ? 'view' : 'views'}`;
@@ -253,23 +254,63 @@
                     badge.classList.add('bg-neon-cyan', 'text-dark-bg');
                 }
             } else {
-                // Create new badge
+                // Create new badge (top-left position)
                 badge = document.createElement('div');
-                badge.className = 'absolute top-2 right-2 z-20 px-2 py-1 rounded-full text-xs font-bold bg-neon-cyan text-dark-bg';
+                badge.className = 'absolute top-2 left-2 z-20 px-2 py-1 rounded-full text-xs font-bold bg-neon-cyan text-dark-bg';
                 badge.textContent = '1 view';
-                button.appendChild(badge);
+                card.appendChild(badge);
+            }
+        }
+
+        // Log movie click from search results (doesn't update badge visually)
+        async function logMovieClickFromSearch(card) {
+            const movieId = card.dataset.movieId;
+            const movieTitle = card.dataset.movieTitle;
+            const posterPath = card.dataset.posterPath;
+
+            // Visual feedback on the eye button
+            const eyeButton = card.querySelector('button[title="Log view to heatmap"]');
+            if (eyeButton) {
+                eyeButton.classList.add('bg-neon-cyan', 'text-dark-bg');
+                setTimeout(() => {
+                    eyeButton.classList.remove('bg-neon-cyan', 'text-dark-bg');
+                }, 1000);
+            }
+
+            try {
+                const response = await fetch('{{ route('heatmap.click') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        tmdb_movie_id: parseInt(movieId),
+                        movie_title: movieTitle,
+                        poster_path: posterPath || null,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateRecentViews(data.recent_views);
+                }
+            } catch (error) {
+                console.error('Failed to log click:', error);
             }
         }
 
         // =====================
         // Add Movie to Grid
         // =====================
-        function addMovieToGrid(button) {
-            const movieId = button.dataset.movieId;
-            const movieTitle = button.dataset.movieTitle;
-            const posterPath = button.dataset.posterPath;
-            const posterUrl = button.dataset.posterUrl;
-            const voteAverage = parseFloat(button.dataset.voteAverage) || 0;
+        function addMovieToGrid(card) {
+            const movieId = card.dataset.movieId;
+            const movieTitle = card.dataset.movieTitle;
+            const posterPath = card.dataset.posterPath;
+            const posterUrl = card.dataset.posterUrl;
+            const voteAverage = parseFloat(card.dataset.voteAverage) || 0;
+            const dbId = card.dataset.dbId || null;
 
             // Close dialog first
             closeSearchDialog();
@@ -286,7 +327,7 @@
             }
 
             // Create new movie card HTML
-            const cardHtml = createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage);
+            const cardHtml = createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage, dbId);
 
             // Prepend to grid
             const grid = document.getElementById('movie-grid');
@@ -300,7 +341,7 @@
             }, 200);
         }
 
-        function createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage) {
+        function createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage, dbId) {
             const posterContent = posterUrl
                 ? `<img src="${posterUrl}" alt="${escapeHtml(movieTitle)}" class="w-full aspect-[2/3] object-cover" loading="lazy">`
                 : `<div class="w-full aspect-[2/3] bg-dark-surface flex items-center justify-center">
@@ -318,23 +359,40 @@
                    </div>`
                 : '';
 
-            return `
+            const eyeButton = `
                 <button
                     type="button"
+                    onclick="event.preventDefault(); event.stopPropagation(); logMovieClick(this.closest('.movie-card'));"
+                    class="absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-cyan hover:text-dark-bg hover:border-neon-cyan transition-all duration-200"
+                    title="Log view to heatmap"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>`;
+
+            // If we have a db_id, wrap in a link; otherwise just a div
+            const wrapperTag = dbId ? 'a' : 'div';
+            const hrefAttr = dbId ? `href="/movies/${dbId}"` : '';
+
+            return `
+                <${wrapperTag}
+                    ${hrefAttr}
                     class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
                     data-movie-id="${movieId}"
                     data-movie-title="${escapeHtml(movieTitle)}"
                     data-poster-path="${posterPath || ''}"
-                    onclick="logMovieClick(this)"
                 >
                     ${posterContent}
-                    <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    ${eyeButton}
+                    <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                         <div class="absolute bottom-0 left-0 right-0 p-3">
                             <h3 class="text-sm font-semibold line-clamp-2">${escapeHtml(movieTitle)}</h3>
                             ${ratingContent}
                         </div>
                     </div>
-                </button>
+                </${wrapperTag}>
             `;
         }
 

@@ -16,7 +16,7 @@ test.describe('Movie Heatmap', () => {
     await expect(movieCards.first()).toBeVisible();
   });
 
-  test('clicking a movie updates the Recent Views sidebar', async ({ page }) => {
+  test('clicking eye icon updates the Recent Views sidebar', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -31,13 +31,17 @@ test.describe('Movie Heatmap', () => {
     const recentViewsSidebar = page.locator('#recent-views-sidebar');
     const initialRecentViewsCount = await recentViewsSidebar.locator('> div').count();
 
+    // Find the eye icon button
+    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
+    await expect(eyeButton).toBeVisible();
+
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the first movie card
-    await firstMovieCard.click();
+    // Click the eye icon (not the card, which now navigates)
+    await eyeButton.click();
 
     // Wait for the API call to complete
     await responsePromise;
@@ -50,7 +54,7 @@ test.describe('Movie Heatmap', () => {
     expect(newRecentViewsCount).toBeGreaterThanOrEqual(initialRecentViewsCount);
   });
 
-  test('movie card shows click count badge after clicking', async ({ page }) => {
+  test('movie card shows click count badge after clicking eye icon', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -60,19 +64,23 @@ test.describe('Movie Heatmap', () => {
     // Find a movie card
     const firstMovieCard = movieCards.first();
 
+    // Find the eye icon button
+    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
+    await expect(eyeButton).toBeVisible();
+
     // Set up response listener before clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the movie card
-    await firstMovieCard.click();
+    // Click the eye icon (not the card itself, which now navigates)
+    await eyeButton.click();
 
     // Wait for the API response
     await responsePromise;
 
-    // Check that a view badge appears on the clicked card
-    const badge = firstMovieCard.locator('[class*="absolute top-2 right-2"]');
+    // Check that a view badge appears on the clicked card (now top-left)
+    const badge = firstMovieCard.locator('[class*="absolute top-2 left-2"]');
     await expect(badge).toBeVisible({ timeout: 5000 });
     await expect(badge).toContainText(/view/);
   });
@@ -102,7 +110,7 @@ test.describe('Movie Heatmap', () => {
     await expect(dialog).toBeVisible();
   });
 
-  test('clicking a movie increments the view count badge', async ({ page }) => {
+  test('clicking eye icon increments the view count badge', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -111,8 +119,8 @@ test.describe('Movie Heatmap', () => {
 
     const firstMovieCard = movieCards.first();
 
-    // Get initial badge text (if exists)
-    const badge = firstMovieCard.locator('[class*="absolute top-2 right-2"]');
+    // Badge is now top-left (top-right is the eye icon)
+    const badge = firstMovieCard.locator('[class*="absolute top-2 left-2"]');
     const badgeExisted = await badge.isVisible();
     let initialCount = 0;
     if (badgeExisted) {
@@ -121,13 +129,17 @@ test.describe('Movie Heatmap', () => {
       initialCount = match ? parseInt(match[1]) : 0;
     }
 
+    // Find eye icon
+    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
+    await expect(eyeButton).toBeVisible();
+
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the movie card
-    await firstMovieCard.click();
+    // Click the eye icon
+    await eyeButton.click();
 
     // Wait for API response
     await responsePromise;

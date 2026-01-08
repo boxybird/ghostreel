@@ -42,9 +42,14 @@ class SearchController extends Controller
         // Merge results, prioritizing local, and dedupe by tmdb_id
         $movies = $this->mergeResults($localResults, $tmdbResults);
 
+        // Get database IDs for movies
+        $tmdbIds = $movies->pluck('id')->toArray();
+        $dbIds = $this->getDbIds($tmdbIds);
+
         // Transform for view
         $results = $movies->map(fn (array $movie): array => [
             ...$movie,
+            'db_id' => $dbIds[$movie['id']] ?? null,
             'poster_url' => TmdbService::posterUrl($movie['poster_path']),
         ]);
 
@@ -54,6 +59,24 @@ class SearchController extends Controller
             'page' => $page,
             'hasMore' => $tmdbResults->count() >= 20,
         ]);
+    }
+
+    /**
+     * Get database IDs for given TMDB movie IDs.
+     *
+     * @param  array<int>  $tmdbIds
+     * @return array<int, int>
+     */
+    private function getDbIds(array $tmdbIds): array
+    {
+        if ($tmdbIds === []) {
+            return [];
+        }
+
+        return Movie::query()
+            ->whereIn('tmdb_id', $tmdbIds)
+            ->pluck('id', 'tmdb_id')
+            ->toArray();
     }
 
     /**

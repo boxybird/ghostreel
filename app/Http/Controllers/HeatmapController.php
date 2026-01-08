@@ -30,9 +30,13 @@ class HeatmapController extends Controller
 
         $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
 
-        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts): array {
+        // Get database IDs for movies
+        $dbIds = $this->getDbIds($trendingMovies->pluck('id')->toArray());
+
+        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts, $dbIds): array {
             return [
                 ...$movie,
+                'db_id' => $dbIds[$movie['id']] ?? null,
                 'poster_url' => TmdbService::posterUrl($movie['poster_path']),
                 'click_count' => $clickCounts[$movie['id']] ?? 0,
             ];
@@ -65,9 +69,13 @@ class HeatmapController extends Controller
 
         $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
 
-        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts): array {
+        // Get database IDs for movies
+        $dbIds = $this->getDbIds($trendingMovies->pluck('id')->toArray());
+
+        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts, $dbIds): array {
             return [
                 ...$movie,
+                'db_id' => $dbIds[$movie['id']] ?? null,
                 'poster_url' => TmdbService::posterUrl($movie['poster_path']),
                 'click_count' => $clickCounts[$movie['id']] ?? 0,
             ];
@@ -151,6 +159,24 @@ class HeatmapController extends Controller
             ->where('clicked_at', '>=', now()->subDay())
             ->groupBy('tmdb_movie_id')
             ->pluck('click_count', 'tmdb_movie_id')
+            ->toArray();
+    }
+
+    /**
+     * Get database IDs for given TMDB movie IDs.
+     *
+     * @param  array<int>  $tmdbIds
+     * @return array<int, int>
+     */
+    private function getDbIds(array $tmdbIds): array
+    {
+        if ($tmdbIds === []) {
+            return [];
+        }
+
+        return Movie::query()
+            ->whereIn('tmdb_id', $tmdbIds)
+            ->pluck('id', 'tmdb_id')
             ->toArray();
     }
 

@@ -20,7 +20,7 @@ parameters:
     checkModelProperties: true
 
     ignoreErrors:
-        - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|getJson|post|postJson|put|putJson|patch|patchJson|delete|deleteJson|actingAs|withSession|withoutMiddleware|from|assertDatabaseHas|assertDatabaseMissing|assertSoftDeleted|artisan)\(\)#'
+        - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|getJson|post|postJson|put|putJson|patch|patchJson|delete|deleteJson|actingAs|withSession|withoutMiddleware|from|assertDatabaseHas|assertDatabaseMissing|assertSoftDeleted|artisan|mock|partialMock|spy)\(\)#'
         # Pest expect()->extend() closures use $this which PHPStan doesn't understand
         - '#Undefined variable: \$this#'
         # Factory return type compatibility

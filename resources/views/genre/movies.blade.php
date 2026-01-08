@@ -48,14 +48,22 @@
 
 {{-- Movie Cards --}}
 @foreach($movies as $movie)
-    <button
-        type="button"
-        class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
-        data-movie-id="{{ $movie['id'] }}"
-        data-movie-title="{{ $movie['title'] }}"
-        data-poster-path="{{ $movie['poster_path'] }}"
-        onclick="logMovieClick(this)"
-    >
+    @if($movie['db_id'])
+        <a
+            href="{{ route('movies.show', $movie['db_id']) }}"
+            class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
+            data-movie-id="{{ $movie['id'] }}"
+            data-movie-title="{{ $movie['title'] }}"
+            data-poster-path="{{ $movie['poster_path'] }}"
+        >
+    @else
+        <div
+            class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20"
+            data-movie-id="{{ $movie['id'] }}"
+            data-movie-title="{{ $movie['title'] }}"
+            data-poster-path="{{ $movie['poster_path'] }}"
+        >
+    @endif
         {{-- Heatmap Glow Effect --}}
         @if($movie['click_count'] > 0)
             <div class="absolute inset-0 z-10 pointer-events-none rounded-xl"
@@ -79,16 +87,29 @@
             </div>
         @endif
 
-        {{-- Click Count Badge --}}
+        {{-- Eye Icon Button - Log to Heatmap --}}
+        <button
+            type="button"
+            onclick="event.preventDefault(); event.stopPropagation(); logMovieClick(this.closest('.movie-card'));"
+            class="absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-cyan hover:text-dark-bg hover:border-neon-cyan transition-all duration-200"
+            title="Log view to heatmap"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        </button>
+
+        {{-- Click Count Badge (moved to top-left to avoid collision with eye icon) --}}
         @if($movie['click_count'] > 0)
-            <div class="absolute top-2 right-2 z-20 px-2 py-1 rounded-full text-xs font-bold
+            <div class="absolute top-2 left-2 z-20 px-2 py-1 rounded-full text-xs font-bold
                 {{ $movie['click_count'] > 5 ? 'bg-neon-pink text-white' : ($movie['click_count'] > 2 ? 'bg-neon-orange text-dark-bg' : 'bg-neon-cyan text-dark-bg') }}">
                 {{ $movie['click_count'] }} {{ $movie['click_count'] === 1 ? 'view' : 'views' }}
             </div>
         @endif
 
         {{-- Overlay --}}
-        <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div class="absolute bottom-0 left-0 right-0 p-3">
                 <h3 class="text-sm font-semibold line-clamp-2">{{ $movie['title'] }}</h3>
                 @if($movie['vote_average'] > 0)
@@ -101,7 +122,11 @@
                 @endif
             </div>
         </div>
-    </button>
+    @if($movie['db_id'])
+        </a>
+    @else
+        </div>
+    @endif
 @endforeach
 
 {{-- Load More Button for Genre --}}
