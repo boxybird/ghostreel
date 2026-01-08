@@ -20,8 +20,8 @@ $navItems = [
 <aside class="w-14 lg:w-64 bg-dark-surface border-r border-white/5 flex flex-col py-6 shrink-0">
     <!-- Logo -->
     <div class="px-2 lg:px-6 mb-8">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
+        <div class="flex items-center justify-center gap-3 lg:justify-start">
+            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-linear-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
@@ -41,7 +41,7 @@ $navItems = [
                     <a
                         href="{{ route($item['route']) }}"
                         @class([
-                            'flex items-center gap-3 px-2 py-2 lg:px-3 lg:py-2.5 rounded-lg transition-colors',
+                            'flex items-center justify-center gap-3 px-2 py-2 lg:justify-start lg:px-3 lg:py-2.5 rounded-lg transition-colors',
                             'bg-white/10 text-neon-cyan' => $isActive,
                             'text-text-muted hover:bg-white/5 hover:text-text-primary' => ! $isActive,
                         ])
