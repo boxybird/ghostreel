@@ -1,4 +1,41 @@
 <x-layouts.app :recent-views="$recentViews" title="Who's Watching?">
+    <x-slot:hero>
+        <!-- Welcome Hero (dismissible per session) -->
+        <div
+            id="welcome-hero"
+            class="mx-6 mt-4 px-4 py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-4"
+            style="display: none;"
+        >
+            <p class="text-sm text-text-muted">
+                <span class="text-white font-medium">Your vote counts.</span>
+                Every click helps decide what rises to the top.
+            </p>
+            <button
+                type="button"
+                onclick="dismissWelcomeHero()"
+                class="text-text-muted hover:text-white transition-colors shrink-0 cursor-pointer"
+                aria-label="Dismiss"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <script>
+            function dismissWelcomeHero() {
+                document.getElementById('welcome-hero').style.display = 'none';
+                sessionStorage.setItem('welcomeHeroDismissed', 'true');
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!sessionStorage.getItem('welcomeHeroDismissed')) {
+                    document.getElementById('welcome-hero').style.display = 'flex';
+                }
+            });
+        </script>
+    </x-slot>
+
     <x-slot:heading>
         <h1 class="text-2xl font-bold">Trending Now</h1>
         <p class="text-sm text-text-muted">See what everyone's watching</p>

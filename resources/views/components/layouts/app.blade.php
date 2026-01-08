@@ -23,6 +23,10 @@
 
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto">
+            @if(isset($hero))
+                {{ $hero }}
+            @endif
+
             <!-- Header -->
             <header class="sticky top-0 z-10 bg-dark-bg/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
                 <div class="flex items-center justify-between">
