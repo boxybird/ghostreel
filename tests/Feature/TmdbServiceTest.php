@@ -10,8 +10,9 @@ beforeEach(function (): void {
 
 it('fetches trending movies from TMDB API', function (): void {
     Http::fake([
-        'api.themoviedb.org/3/trending/movie/day' => Http::response([
+        'api.themoviedb.org/3/trending/movie/day*' => Http::response([
             'page' => 1,
+            'total_pages' => 500,
             'results' => [
                 [
                     'id' => 123,
@@ -27,10 +28,13 @@ it('fetches trending movies from TMDB API', function (): void {
     ]);
 
     $service = new TmdbService('fake-token');
-    $movies = $service->getTrendingMovies();
+    $result = $service->getTrendingMovies();
 
-    expect($movies)->toHaveCount(1);
-    expect($movies->first())->toBe([
+    expect($result)->toHaveKeys(['movies', 'page', 'total_pages']);
+    expect($result['movies'])->toHaveCount(1);
+    expect($result['page'])->toBe(1);
+    expect($result['total_pages'])->toBe(500);
+    expect($result['movies']->first())->toBe([
         'id' => 123,
         'title' => 'Test Movie',
         'poster_path' => '/test.jpg',
@@ -43,13 +47,15 @@ it('fetches trending movies from TMDB API', function (): void {
 
 it('returns empty collection when API fails', function (): void {
     Http::fake([
-        'api.themoviedb.org/3/trending/movie/day' => Http::response([], 500),
+        'api.themoviedb.org/3/trending/movie/day*' => Http::response([], 500),
     ]);
 
     $service = new TmdbService('fake-token');
-    $movies = $service->getTrendingMovies();
+    $result = $service->getTrendingMovies();
 
-    expect($movies)->toBeEmpty();
+    expect($result['movies'])->toBeEmpty();
+    expect($result['page'])->toBe(1);
+    expect($result['total_pages'])->toBe(1);
 });
 
 it('fetches movie details by ID', function (): void {
@@ -92,7 +98,9 @@ it('returns null when movie details API fails', function (): void {
 
 it('caches trending movies response', function (): void {
     Http::fake([
-        'api.themoviedb.org/3/trending/movie/day' => Http::response([
+        'api.themoviedb.org/3/trending/movie/day*' => Http::response([
+            'page' => 1,
+            'total_pages' => 1,
             'results' => [['id' => 1, 'title' => 'Cached', 'vote_average' => 5]],
         ]),
     ]);
@@ -105,6 +113,34 @@ it('caches trending movies response', function (): void {
     $service->getTrendingMovies();
 
     Http::assertSentCount(1);
+});
+
+it('supports pagination for trending movies', function (): void {
+    Http::fake([
+        'api.themoviedb.org/3/trending/movie/day*' => function ($request) {
+            $page = $request->data()['page'] ?? 1;
+
+            return Http::response([
+                'page' => $page,
+                'total_pages' => 10,
+                'results' => [
+                    ['id' => $page * 100, 'title' => "Movie Page {$page}", 'vote_average' => 7.0],
+                ],
+            ]);
+        },
+    ]);
+
+    $service = new TmdbService('fake-token');
+
+    $page1 = $service->getTrendingMovies(page: 1);
+    expect($page1['page'])->toBe(1);
+    expect($page1['movies']->first()['id'])->toBe(100);
+
+    Cache::flush(); // Clear cache to test page 2
+
+    $page2 = $service->getTrendingMovies(page: 2);
+    expect($page2['page'])->toBe(2);
+    expect($page2['movies']->first()['id'])->toBe(200);
 });
 
 it('builds poster URL correctly', function (): void {

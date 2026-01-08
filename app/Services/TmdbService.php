@@ -26,24 +26,34 @@ class TmdbService
     /**
      * Get trending movies for today.
      *
-     * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>
+     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>, page: int, total_pages: int}
      */
-    public function getTrendingMovies(): Collection
+    public function getTrendingMovies(int $page = 1): array
     {
-        $cacheKey = 'tmdb_trending_movies_day';
+        $cacheKey = "tmdb_trending_movies_day_page_{$page}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function (): Collection {
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($page): array {
             /** @var Response $response */
-            $response = $this->client()->get('/trending/movie/day');
+            $response = $this->client()->get('/trending/movie/day', [
+                'page' => $page,
+            ]);
 
             if ($response->failed()) {
-                return collect();
+                return [
+                    'movies' => collect(),
+                    'page' => $page,
+                    'total_pages' => 1,
+                ];
             }
 
             /** @var array<int, array<string, mixed>> $results */
             $results = $response->json('results', []);
 
-            return collect($results)->map(fn (array $movie): array => $this->transformMovie($movie));
+            return [
+                'movies' => collect($results)->map(fn (array $movie): array => $this->transformMovie($movie)),
+                'page' => (int) $response->json('page', 1),
+                'total_pages' => (int) $response->json('total_pages', 1),
+            ];
         });
     }
 

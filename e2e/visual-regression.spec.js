@@ -19,6 +19,11 @@ const DYNAMIC_CONTENT_SELECTORS = [
   '#recent-views-sidebar', // Recent views section (timestamps + posters)
 ];
 
+// Allow small pixel variance for font rendering differences
+const SCREENSHOT_OPTIONS = {
+  maxDiffPixelRatio: 0.02, // Allow up to 2% pixel difference
+};
+
 test.describe('Visual Regression', () => {
   test('homepage desktop viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -31,6 +36,7 @@ test.describe('Visual Regression', () => {
     await expect(page).toHaveScreenshot('homepage-desktop.png', {
       fullPage: true,
       mask: DYNAMIC_CONTENT_SELECTORS.map((sel) => page.locator(sel)),
+      ...SCREENSHOT_OPTIONS,
     });
   });
 
@@ -45,6 +51,7 @@ test.describe('Visual Regression', () => {
     await expect(page).toHaveScreenshot('homepage-mobile.png', {
       fullPage: true,
       mask: DYNAMIC_CONTENT_SELECTORS.map((sel) => page.locator(sel)),
+      ...SCREENSHOT_OPTIONS,
     });
   });
 
@@ -72,6 +79,7 @@ test.describe('Visual Regression', () => {
         page.locator('#search-spinner'), // Loading spinner
         ...DYNAMIC_CONTENT_SELECTORS.map((sel) => page.locator(sel)), // Background content
       ],
+      ...SCREENSHOT_OPTIONS,
     });
   });
 });

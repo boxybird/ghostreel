@@ -22,7 +22,8 @@ class HeatmapController extends Controller
      */
     public function index(Request $request): View
     {
-        $trendingMovies = $this->tmdbService->getTrendingMovies();
+        $trendingData = $this->tmdbService->getTrendingMovies(page: 1);
+        $trendingMovies = $trendingData['movies'];
 
         // Auto-seed trending movies to local database
         $this->seedMoviesToDatabase($trendingMovies, 'trending');
@@ -42,6 +43,39 @@ class HeatmapController extends Controller
         return view('heatmap.index', [
             'movies' => $movies,
             'recentViews' => $recentViews,
+            'currentPage' => $trendingData['page'],
+            'totalPages' => $trendingData['total_pages'],
+            'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],
+        ]);
+    }
+
+    /**
+     * Load more trending movies (HTMX partial).
+     */
+    public function trending(Request $request): View
+    {
+        $page = (int) $request->input('page', 1);
+        $trendingData = $this->tmdbService->getTrendingMovies(page: $page);
+        $trendingMovies = $trendingData['movies'];
+
+        // Auto-seed trending movies to local database
+        $this->seedMoviesToDatabase($trendingMovies, 'trending');
+
+        $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
+
+        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts): array {
+            return [
+                ...$movie,
+                'poster_url' => TmdbService::posterUrl($movie['poster_path']),
+                'click_count' => $clickCounts[$movie['id']] ?? 0,
+            ];
+        });
+
+        return view('heatmap.partials.movie-cards', [
+            'movies' => $movies,
+            'currentPage' => $trendingData['page'],
+            'totalPages' => $trendingData['total_pages'],
+            'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],
         ]);
     }
 

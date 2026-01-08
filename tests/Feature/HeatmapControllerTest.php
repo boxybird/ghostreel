@@ -8,7 +8,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Http::fake([
-        'api.themoviedb.org/3/trending/movie/day' => Http::response([
+        'api.themoviedb.org/3/trending/movie/day*' => Http::response([
+            'page' => 1,
+            'total_pages' => 10,
             'results' => [
                 [
                     'id' => 123,
@@ -40,6 +42,8 @@ it('displays the heatmap index page with trending movies', function (): void {
     $response->assertViewIs('heatmap.index');
     $response->assertViewHas('movies');
     $response->assertViewHas('recentViews');
+    $response->assertViewHas('currentPage', 1);
+    $response->assertViewHas('hasMorePages', true);
 });
 
 it('logs a movie click and returns recent views', function (): void {
@@ -160,4 +164,29 @@ it('includes click counts in movie data on index page', function (): void {
     $testMovie = $movies->firstWhere('id', 123);
 
     expect($testMovie['click_count'])->toBe(3);
+});
+
+it('returns trending movies partial for HTMX load more', function (): void {
+    $response = $this->get('/trending?page=2');
+
+    $response->assertSuccessful();
+    $response->assertViewIs('heatmap.partials.movie-cards');
+    $response->assertViewHas('movies');
+    $response->assertViewHas('currentPage', 1); // Mocked response always returns page 1
+    $response->assertViewHas('hasMorePages');
+});
+
+it('trending endpoint returns movie cards with click counts', function (): void {
+    MovieClick::factory()->count(5)->create([
+        'tmdb_movie_id' => 123,
+        'clicked_at' => now(),
+    ]);
+
+    $response = $this->get('/trending?page=1');
+
+    $response->assertSuccessful();
+    $movies = $response->viewData('movies');
+    $testMovie = $movies->firstWhere('id', 123);
+
+    expect($testMovie['click_count'])->toBe(5);
 });
