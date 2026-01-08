@@ -67,10 +67,10 @@
                             <img
                                 src="{{ $posterUrl }}"
                                 alt="{{ $movie->title }}"
-                                class="w-56 md:w-64 lg:w-72 rounded-xl shadow-2xl shadow-black/50"
+                                class="w-56 md:w-64 lg:w-sm rounded-xl shadow-2xl shadow-black/50"
                             >
                         @else
-                            <div class="w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-xl bg-dark-surface flex items-center justify-center">
+                            <div class="w-56 md:w-64 lg:w-sm aspect-[2/3] rounded-xl bg-dark-surface flex items-center justify-center">
                                 <svg class="w-16 h-16 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
@@ -146,7 +146,7 @@
 
     <!-- Content Section -->
     <div class="mx-5 py-8 md:py-12">
-        <div class="max-w-2xl mx-auto">
+        <div class="max-w-4xl mx-auto">
             <!-- Overview -->
             @if($movie->overview)
                 <section class="mb-10 md:mb-12">
