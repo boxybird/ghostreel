@@ -81,7 +81,7 @@ test.describe('Movie Heatmap', () => {
     await page.goto('/');
 
     // Check for sidebar navigation links
-    await expect(page.getByRole('link', { name: /Home/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Trending/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Popular/i })).toBeVisible();
   });
 
