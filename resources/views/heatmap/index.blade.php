@@ -99,13 +99,14 @@
                         type="button"
                         id="search-trigger"
                         onclick="openSearchDialog()"
-                        class="flex items-center gap-2 w-48 sm:w-64 px-4 py-2 bg-dark-surface border border-white/10 rounded-xl text-sm text-text-muted hover:border-neon-cyan/30 hover:text-text-primary transition-colors cursor-pointer"
+                        class="flex items-center gap-2 px-3 py-2 bg-dark-surface border border-white/10 rounded-xl hover:bg-white/10 hover:border-neon-cyan/30 transition-colors cursor-pointer"
+                        aria-label="Search movies"
+                        title="Search movies (⌘K)"
                     >
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <span class="truncate">Search movies...</span>
-                        <kbd class="hidden sm:inline-flex ml-auto text-xs opacity-50 bg-white/5 px-1.5 py-0.5 rounded">⌘K</kbd>
+                        <kbd class="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">⌘K</kbd>
                     </button>
                 </div>
             </header>
@@ -180,8 +181,8 @@
         class="w-[95vw] sm:w-[85vw] lg:w-[900px] max-h-[90vh] sm:max-h-[85vh] lg:max-h-[80vh] bg-dark-surface rounded-t-2xl sm:rounded-2xl border border-white/10 shadow-2xl p-0 overflow-hidden"
     >
         <!-- Sticky Search Header -->
-        <div class="sticky top-0 z-10 bg-dark-surface border-b border-white/10 p-4 flex items-center gap-3">
-            <svg class="w-5 h-5 text-text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="sticky top-0 z-10 bg-dark-card border-b border-white/10 p-4 flex items-center gap-3">
+            <svg class="w-5 h-5 text-neon-cyan shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -190,7 +191,7 @@
                 name="q"
                 placeholder="Search for movies..."
                 autocomplete="off"
-                class="flex-1 bg-transparent text-lg outline-none placeholder:text-text-muted"
+                class="flex-1 bg-transparent text-lg text-text-primary outline-none placeholder:text-text-muted caret-neon-cyan"
                 hx-get="{{ route('search') }}"
                 hx-trigger="input changed delay:300ms"
                 hx-target="#search-results"

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class SearchRequest extends FormRequest
 {
@@ -37,5 +39,21 @@ class SearchRequest extends FormRequest
             'q.min' => 'Search term must be at least 2 characters.',
             'q.max' => 'Search term must not exceed 100 characters.',
         ];
+    }
+
+    /**
+     * Handle a failed validation attempt for HTMX requests.
+     * Returns the empty state partial instead of redirecting.
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        // For HTMX requests, return empty state partial instead of redirect
+        if ($this->header('HX-Request')) {
+            throw new HttpResponseException(
+                response()->view('heatmap.partials.search-empty')
+            );
+        }
+
+        parent::failedValidation($validator);
     }
 }

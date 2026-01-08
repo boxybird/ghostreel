@@ -89,10 +89,11 @@ test.describe('Movie Heatmap', () => {
   test('search button is present and opens dialog', async ({ page }) => {
     await page.goto('/');
 
-    // Check for search trigger button
+    // Check for search trigger button (icon button with keyboard shortcut)
     const searchButton = page.locator('#search-trigger');
     await expect(searchButton).toBeVisible();
-    await expect(searchButton).toContainText('Search movies');
+    await expect(searchButton).toHaveAttribute('aria-label', 'Search movies');
+    await expect(searchButton).toContainText('K'); // keyboard shortcut badge
 
     // Click to open dialog
     await searchButton.click();
