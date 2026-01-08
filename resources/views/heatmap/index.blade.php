@@ -7,8 +7,8 @@
             style="display: none;"
         >
             <p class="text-sm text-text-muted">
-                <span class="text-white font-medium">Your vote counts.</span>
-                Every click helps decide what rises to the top.
+                <span class="text-white font-medium">Log it. See what's hot.</span>
+                Click the eye icon on any movie to track your watch and shape the heatmap — no sign-up needed.
             </p>
             <button
                 type="button"
