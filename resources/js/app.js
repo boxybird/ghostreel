@@ -1,8 +1,13 @@
 import './bootstrap';
-import 'htmx.org';
+import htmx from 'htmx.org';
+
+// Feature modules - import to make functions available globally
+import './features/movie-click.js';
+import './features/search-dialog.js';
+import './features/movie-grid.js';
 
 // Make htmx available globally
-window.htmx = require('htmx.org');
+window.htmx = htmx;
 
 // Configure HTMX to include CSRF token in all requests
 document.addEventListener('DOMContentLoaded', () => {
