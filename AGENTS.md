@@ -19,7 +19,12 @@ bd sync               # Sync with git
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
+2. **Run quality gates** - You must run these tools in order and fix all issues:
+    - `vendor/bin/rector process --dry-run` (Refactoring & upgrades)
+    - `vendor/bin/phpstan analyse` (Static analysis via Larastan)
+    - `vendor/bin/pint` (Code style formatting)
+    - `php artisan test` (Pest feature & unit tests)
+    - `npx playwright test` (E2E browser tests)
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
@@ -222,6 +227,27 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - You must run `vendor/bin/pint --dirty` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test`, simply run `vendor/bin/pint` to fix any formatting issues.
 
+=== code quality/core rules ===
+
+## Quality Tools & Automation
+
+### Larastan (Static Analysis)
+- Always run `./vendor/bin/phpstan analyse` after changing logic.
+- You must aim for zero errors at the configured level (check `phpstan.neon`).
+- Use PHPDoc blocks to help Larastan understand complex types that Eloquent doesn't explicitly type-hint.
+
+### Rector (Automated Refactoring)
+- Run `vendor/bin/rector process --dry-run` to see suggested improvements.
+- Use Rector to ensure we are using the most modern PHP 8.4 and Laravel 12 syntax.
+- Only apply Rector changes with `vendor/bin/rector process` if they align with project conventions.
+
+### Playwright (Browser Testing & MCP)
+- You have access to the **Playwright MCP server**. You can use it to:
+    - Launch a real browser to verify the UI you just built.
+    - Generate new E2E tests in `tests/Browser/` or `tests/e2e/`.
+    - Debug UI issues by inspecting the live DOM.
+- Before closing a task involving a UI change, run `npx playwright test` to ensure no regressions.
+
 === pest/core rules ===
 
 ## Pest
@@ -382,3 +408,20 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
 </laravel-boost-guidelines>
+
+---
+
+## Project Specific Rules (Movie Heatmap)
+
+### Logic & Identity
+- **Identity:** Use `request()->ip()` as the unique identifier for all interactions. Do not create or reference a `users` table.
+- **External API:** All calls to The Movie Database must be encapsulated within a dedicated `TmdbService` class.
+
+### Visual Design Guidelines (The Muse)
+- **Reference Image:** Refer to `.agent-assets/design-inspiration.webp` for the visual direction.
+- **Goal:** Capture the "vibe" (typography, color palette, and spacing density) without being a literal clone of the layout.
+- **Implementation:** Use Tailwind CSS 4 to implement these styles. Prefer custom theme variables in your CSS file if the reference uses specific brand colors.
+
+### Automated Verification
+- **Playwright MCP:** Use the browser to confirm that the heatmap UI updates instantly after a "click" event is logged.
+- **Regression:** Once the "Home" and "Sidebar" views are approved, these become the baseline for all future Playwright visual comparisons.
