@@ -30,7 +30,7 @@ An experimental "zero-auth" movie dashboard. Leveraging Laravel 12 and the TMDB 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd OpenCode-Test
+cd ghostreel
 
 # Install dependencies
 composer install
