@@ -95,17 +95,48 @@
                         <p class="text-sm text-text-muted">See what everyone's watching</p>
                     </div>
                     <div class="relative">
-                        <input type="text" placeholder="Search movies..." class="w-64 px-4 py-2 pl-10 bg-dark-surface border border-white/10 rounded-xl text-sm focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/25 transition-colors">
+                        <input
+                            type="text"
+                            id="search-input"
+                            name="q"
+                            placeholder="Search movies..."
+                            autocomplete="off"
+                            class="w-64 px-4 py-2 pl-10 bg-dark-surface border border-white/10 rounded-xl text-sm focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/25 transition-colors"
+                            hx-get="{{ route('search') }}"
+                            hx-trigger="input changed delay:300ms, focus"
+                            hx-target="#search-results"
+                            hx-swap="innerHTML"
+                            hx-indicator="#search-spinner"
+                            popovertarget="search-popover"
+                            popovertargetaction="show"
+                        >
                         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
+                        <svg id="search-spinner" class="htmx-indicator w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-neon-cyan animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+
+                        <!-- Search Results Popover -->
+                        <div
+                            id="search-popover"
+                            popover
+                            class="absolute top-full left-0 mt-2 w-80 max-h-96 overflow-y-auto bg-dark-surface border border-white/10 rounded-xl shadow-2xl shadow-black/50 z-50"
+                        >
+                            <div id="search-results">
+                                <div class="p-4 text-center text-text-muted text-sm">
+                                    Type to search movies...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Movie Grid -->
             <div class="p-6">
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div id="movie-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     @foreach($movies as $movie)
                         <button
                             type="button"
@@ -244,6 +275,132 @@
                 button.appendChild(badge);
             }
         }
+
+        function addMovieToGrid(button) {
+            const movieId = button.dataset.movieId;
+            const movieTitle = button.dataset.movieTitle;
+            const posterPath = button.dataset.posterPath;
+            const posterUrl = button.dataset.posterUrl;
+            const voteAverage = parseFloat(button.dataset.voteAverage) || 0;
+
+            // Check if movie already exists in grid
+            const existingCard = document.querySelector(`[data-movie-id="${movieId}"]`);
+            if (existingCard && existingCard.closest('#movie-grid')) {
+                // Scroll to existing card and highlight it
+                existingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                highlightCard(existingCard);
+                closeSearchPopover();
+                return;
+            }
+
+            // Create new movie card HTML
+            const cardHtml = createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage);
+
+            // Prepend to grid
+            const grid = document.getElementById('movie-grid');
+            grid.insertAdjacentHTML('afterbegin', cardHtml);
+
+            // Get the newly added card
+            const newCard = grid.firstElementChild;
+
+            // Scroll to top and highlight
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            highlightCard(newCard);
+
+            // Close the search popover
+            closeSearchPopover();
+
+            // Clear search input
+            document.getElementById('search-input').value = '';
+        }
+
+        function createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage) {
+            const posterContent = posterUrl
+                ? `<img src="${posterUrl}" alt="${escapeHtml(movieTitle)}" class="w-full aspect-[2/3] object-cover" loading="lazy">`
+                : `<div class="w-full aspect-[2/3] bg-dark-surface flex items-center justify-center">
+                    <svg class="w-12 h-12 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                   </div>`;
+
+            const ratingContent = voteAverage > 0
+                ? `<div class="flex items-center gap-1 mt-1">
+                    <svg class="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span class="text-xs text-text-muted">${voteAverage.toFixed(1)}</span>
+                   </div>`
+                : '';
+
+            return `
+                <button
+                    type="button"
+                    class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
+                    data-movie-id="${movieId}"
+                    data-movie-title="${escapeHtml(movieTitle)}"
+                    data-poster-path="${posterPath || ''}"
+                    onclick="logMovieClick(this)"
+                >
+                    ${posterContent}
+                    <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div class="absolute bottom-0 left-0 right-0 p-3">
+                            <h3 class="text-sm font-semibold line-clamp-2">${escapeHtml(movieTitle)}</h3>
+                            ${ratingContent}
+                        </div>
+                    </div>
+                </button>
+            `;
+        }
+
+        function highlightCard(card) {
+            card.classList.add('ring-2', 'ring-neon-cyan', 'shadow-lg', 'shadow-neon-cyan/40');
+            setTimeout(() => {
+                card.classList.remove('ring-2', 'ring-neon-cyan', 'shadow-lg', 'shadow-neon-cyan/40');
+            }, 2000);
+        }
+
+        function closeSearchPopover() {
+            const popover = document.getElementById('search-popover');
+            if (popover && popover.hidePopover) {
+                popover.hidePopover();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close popover when clicking outside
+        document.addEventListener('click', (e) => {
+            const popover = document.getElementById('search-popover');
+            const searchInput = document.getElementById('search-input');
+            if (popover && !popover.contains(e.target) && e.target !== searchInput) {
+                closeSearchPopover();
+            }
+        });
+
+        // Show popover when input has value and is focused
+        document.getElementById('search-input')?.addEventListener('focus', function() {
+            if (this.value.length >= 2) {
+                const popover = document.getElementById('search-popover');
+                if (popover && popover.showPopover) {
+                    popover.showPopover();
+                }
+            }
+        });
+
+        // Show popover after HTMX loads search results
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'search-results') {
+                const popover = document.getElementById('search-popover');
+                const searchInput = document.getElementById('search-input');
+                if (popover && popover.showPopover && searchInput.value.length >= 2) {
+                    popover.showPopover();
+                }
+            }
+        });
     </script>
 </body>
 </html>

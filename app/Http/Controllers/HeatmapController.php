@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LogClickRequest;
+use App\Models\Movie;
 use App\Models\MovieClick;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
@@ -22,6 +23,9 @@ class HeatmapController extends Controller
     public function index(Request $request): View
     {
         $trendingMovies = $this->tmdbService->getTrendingMovies();
+
+        // Auto-seed trending movies to local database
+        $this->seedMoviesToDatabase($trendingMovies, 'trending');
 
         $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
 
@@ -129,5 +133,28 @@ class HeatmapController extends Controller
                 'poster_url' => TmdbService::posterUrl($click->poster_path, 'w185'),
                 'clicked_at' => $click->clicked_at->diffForHumans(),
             ]);
+    }
+
+    /**
+     * Seed movies from TMDB response to local database.
+     *
+     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>  $movies
+     */
+    private function seedMoviesToDatabase(Collection $movies, string $source): void
+    {
+        foreach ($movies as $movie) {
+            Movie::updateOrCreate(
+                ['tmdb_id' => $movie['id']],
+                [
+                    'title' => $movie['title'],
+                    'poster_path' => $movie['poster_path'],
+                    'backdrop_path' => $movie['backdrop_path'],
+                    'overview' => $movie['overview'],
+                    'release_date' => $movie['release_date'] ?: null,
+                    'vote_average' => $movie['vote_average'],
+                    'source' => $source,
+                ]
+            );
+        }
     }
 }

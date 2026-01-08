@@ -31,13 +31,16 @@ test.describe('Movie Heatmap', () => {
     const recentViewsSidebar = page.locator('#recent-views-sidebar');
     const initialRecentViewsCount = await recentViewsSidebar.locator('> div').count();
 
+    // Set up response listener BEFORE clicking
+    const responsePromise = page.waitForResponse(response =>
+      response.url().includes('/click') && response.status() === 200
+    );
+
     // Click the first movie card
     await firstMovieCard.click();
 
-    // Wait for the API call to complete and sidebar to update
-    await page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
-    );
+    // Wait for the API call to complete
+    await responsePromise;
 
     // Verify the sidebar updated with the new view
     await expect(recentViewsSidebar.locator('> div').first()).toContainText(movieTitle);
@@ -110,11 +113,16 @@ test.describe('Movie Heatmap', () => {
       initialCount = match ? parseInt(match[1]) : 0;
     }
 
-    // Click the movie card
-    await firstMovieCard.click();
-    await page.waitForResponse(response =>
+    // Set up response listener BEFORE clicking
+    const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
+
+    // Click the movie card
+    await firstMovieCard.click();
+
+    // Wait for API response
+    await responsePromise;
 
     // Wait a moment for DOM update
     await page.waitForTimeout(200);

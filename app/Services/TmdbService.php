@@ -48,6 +48,38 @@ class TmdbService
     }
 
     /**
+     * Search movies by query string.
+     *
+     * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>
+     */
+    public function searchMovies(string $query, int $page = 1): Collection
+    {
+        if (trim($query) === '') {
+            return collect();
+        }
+
+        $cacheKey = 'tmdb_search_'.md5($query)."_page_{$page}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($query, $page): Collection {
+            /** @var Response $response */
+            $response = $this->client()->get('/search/movie', [
+                'query' => $query,
+                'page' => $page,
+                'include_adult' => false,
+            ]);
+
+            if ($response->failed()) {
+                return collect();
+            }
+
+            /** @var array<int, array<string, mixed>> $results */
+            $results = $response->json('results', []);
+
+            return collect($results)->map(fn (array $movie): array => $this->transformMovie($movie));
+        });
+    }
+
+    /**
      * Get details for a specific movie.
      *
      * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}|null

@@ -22,3 +22,20 @@
     --color-text-primary: oklch(0.95 0.01 270);
     --color-text-muted: oklch(0.7 0.02 270);
 }
+
+/* HTMX Indicator - hide by default, show when htmx-request */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: block;
+}
+
+/* Native Popover positioning override */
+[popover] {
+    margin: 0;
+    position: absolute;
+    inset: unset;
+}
