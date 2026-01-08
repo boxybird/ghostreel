@@ -208,14 +208,14 @@
                 class="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0"
                 aria-label="Close search"
             >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
         <!-- Scrollable Results Area -->
-        <div id="search-results" class="p-4 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+        <div id="search-results" class="bg-dark-surface p-4 overflow-y-auto" style="max-height: calc(90vh - 80px);">
             <div class="flex flex-col items-center justify-center py-16 text-text-muted">
                 <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

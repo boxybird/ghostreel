@@ -35,7 +35,7 @@
 
 /* Search Dialog Styles */
 dialog#search-dialog {
-    margin: auto;
+    margin: 2rem auto;
     border: none;
     padding: 0;
     background: transparent;
