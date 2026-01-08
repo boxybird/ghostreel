@@ -17,7 +17,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-dark-bg text-text-primary min-h-screen">
+<body hx-boost="true" class="bg-dark-bg text-text-primary min-h-screen">
     <div class="flex min-h-screen">
         <x-sidebar :recent-views="$recentViews" />
 
