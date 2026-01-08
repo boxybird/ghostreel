@@ -86,12 +86,20 @@ test.describe('Movie Heatmap', () => {
     await expect(page.getByRole('link', { name: /Movies/i })).toBeVisible();
   });
 
-  test('search input is present', async ({ page }) => {
+  test('search button is present and opens dialog', async ({ page }) => {
     await page.goto('/');
 
-    // Check for search input
-    const searchInput = page.getByPlaceholder('Search movies...');
-    await expect(searchInput).toBeVisible();
+    // Check for search trigger button
+    const searchButton = page.locator('#search-trigger');
+    await expect(searchButton).toBeVisible();
+    await expect(searchButton).toContainText('Search movies');
+
+    // Click to open dialog
+    await searchButton.click();
+
+    // Dialog should open
+    const dialog = page.locator('dialog#search-dialog');
+    await expect(dialog).toBeVisible();
   });
 
   test('clicking a movie increments the view count badge', async ({ page }) => {

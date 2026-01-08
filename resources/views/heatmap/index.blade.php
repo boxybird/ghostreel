@@ -94,43 +94,19 @@
                         <h1 class="text-2xl font-bold">Trending Now</h1>
                         <p class="text-sm text-text-muted">See what everyone's watching</p>
                     </div>
-                    <div class="relative">
-                        <input
-                            type="text"
-                            id="search-input"
-                            name="q"
-                            placeholder="Search movies..."
-                            autocomplete="off"
-                            class="w-64 px-4 py-2 pl-10 bg-dark-surface border border-white/10 rounded-xl text-sm focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/25 transition-colors"
-                            hx-get="{{ route('search') }}"
-                            hx-trigger="input changed delay:300ms, focus"
-                            hx-target="#search-results"
-                            hx-swap="innerHTML"
-                            hx-indicator="#search-spinner"
-                            popovertarget="search-popover"
-                            popovertargetaction="show"
-                        >
-                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Search Trigger Button -->
+                    <button
+                        type="button"
+                        id="search-trigger"
+                        onclick="openSearchDialog()"
+                        class="flex items-center gap-2 w-48 sm:w-64 px-4 py-2 bg-dark-surface border border-white/10 rounded-xl text-sm text-text-muted hover:border-neon-cyan/30 hover:text-text-primary transition-colors cursor-pointer"
+                    >
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <svg id="search-spinner" class="htmx-indicator w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-neon-cyan animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-
-                        <!-- Search Results Popover -->
-                        <div
-                            id="search-popover"
-                            popover
-                            class="absolute top-full left-0 mt-2 w-80 max-h-96 overflow-y-auto bg-dark-surface border border-white/10 rounded-xl shadow-2xl shadow-black/50 z-50"
-                        >
-                            <div id="search-results">
-                                <div class="p-4 text-center text-text-muted text-sm">
-                                    Type to search movies...
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <span class="truncate">Search movies...</span>
+                        <kbd class="hidden sm:inline-flex ml-auto text-xs opacity-50 bg-white/5 px-1.5 py-0.5 rounded">⌘K</kbd>
+                    </button>
                 </div>
             </header>
 
@@ -198,7 +174,106 @@
         </main>
     </div>
 
+    <!-- Search Dialog -->
+    <dialog
+        id="search-dialog"
+        class="w-[95vw] sm:w-[85vw] lg:w-[900px] max-h-[90vh] sm:max-h-[85vh] lg:max-h-[80vh] bg-dark-surface rounded-t-2xl sm:rounded-2xl border border-white/10 shadow-2xl p-0 overflow-hidden"
+    >
+        <!-- Sticky Search Header -->
+        <div class="sticky top-0 z-10 bg-dark-surface border-b border-white/10 p-4 flex items-center gap-3">
+            <svg class="w-5 h-5 text-text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+                type="text"
+                id="search-input"
+                name="q"
+                placeholder="Search for movies..."
+                autocomplete="off"
+                class="flex-1 bg-transparent text-lg outline-none placeholder:text-text-muted"
+                hx-get="{{ route('search') }}"
+                hx-trigger="input changed delay:300ms"
+                hx-target="#search-results"
+                hx-swap="innerHTML"
+                hx-indicator="#search-spinner"
+            >
+            <svg id="search-spinner" class="htmx-indicator w-5 h-5 text-neon-cyan animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <button
+                type="button"
+                onclick="closeSearchDialog()"
+                class="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0"
+                aria-label="Close search"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Scrollable Results Area -->
+        <div id="search-results" class="p-4 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+            <div class="flex flex-col items-center justify-center py-16 text-text-muted">
+                <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p class="text-lg font-medium mb-1">Search for movies</p>
+                <p class="text-sm opacity-70">Start typing to find movies to add to your grid</p>
+            </div>
+        </div>
+    </dialog>
+
     <script>
+        // =====================
+        // Search Dialog Functions
+        // =====================
+        function openSearchDialog() {
+            const dialog = document.getElementById('search-dialog');
+            dialog.showModal();
+            // Focus and select input after animation
+            setTimeout(() => {
+                const input = document.getElementById('search-input');
+                input.focus();
+                input.select();
+            }, 50);
+        }
+
+        function closeSearchDialog() {
+            const dialog = document.getElementById('search-dialog');
+            dialog.close();
+            // Reset input and results
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results').innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-text-muted">
+                    <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <p class="text-lg font-medium mb-1">Search for movies</p>
+                    <p class="text-sm opacity-70">Start typing to find movies to add to your grid</p>
+                </div>
+            `;
+        }
+
+        // Close dialog when clicking on backdrop
+        document.getElementById('search-dialog')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSearchDialog();
+            }
+        });
+
+        // Keyboard shortcut: Cmd/Ctrl + K to open search
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearchDialog();
+            }
+        });
+
+        // =====================
+        // Movie Click Tracking
+        // =====================
         async function logMovieClick(button) {
             const movieId = button.dataset.movieId;
             const movieTitle = button.dataset.movieTitle;
@@ -276,6 +351,9 @@
             }
         }
 
+        // =====================
+        // Add Movie to Grid
+        // =====================
         function addMovieToGrid(button) {
             const movieId = button.dataset.movieId;
             const movieTitle = button.dataset.movieTitle;
@@ -283,13 +361,17 @@
             const posterUrl = button.dataset.posterUrl;
             const voteAverage = parseFloat(button.dataset.voteAverage) || 0;
 
+            // Close dialog first
+            closeSearchDialog();
+
             // Check if movie already exists in grid
-            const existingCard = document.querySelector(`[data-movie-id="${movieId}"]`);
-            if (existingCard && existingCard.closest('#movie-grid')) {
+            const existingCard = document.querySelector(`#movie-grid [data-movie-id="${movieId}"]`);
+            if (existingCard) {
                 // Scroll to existing card and highlight it
-                existingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                highlightCard(existingCard);
-                closeSearchPopover();
+                setTimeout(() => {
+                    existingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    highlightCard(existingCard);
+                }, 200);
                 return;
             }
 
@@ -300,18 +382,12 @@
             const grid = document.getElementById('movie-grid');
             grid.insertAdjacentHTML('afterbegin', cardHtml);
 
-            // Get the newly added card
+            // Get the newly added card and highlight
             const newCard = grid.firstElementChild;
-
-            // Scroll to top and highlight
-            newCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            highlightCard(newCard);
-
-            // Close the search popover
-            closeSearchPopover();
-
-            // Clear search input
-            document.getElementById('search-input').value = '';
+            setTimeout(() => {
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                highlightCard(newCard);
+            }, 200);
         }
 
         function createMovieCardHtml(movieId, movieTitle, posterPath, posterUrl, voteAverage) {
@@ -359,48 +435,14 @@
             }, 2000);
         }
 
-        function closeSearchPopover() {
-            const popover = document.getElementById('search-popover');
-            if (popover && popover.hidePopover) {
-                popover.hidePopover();
-            }
-        }
-
+        // =====================
+        // Utility Functions
+        // =====================
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-
-        // Close popover when clicking outside
-        document.addEventListener('click', (e) => {
-            const popover = document.getElementById('search-popover');
-            const searchInput = document.getElementById('search-input');
-            if (popover && !popover.contains(e.target) && e.target !== searchInput) {
-                closeSearchPopover();
-            }
-        });
-
-        // Show popover when input has value and is focused
-        document.getElementById('search-input')?.addEventListener('focus', function() {
-            if (this.value.length >= 2) {
-                const popover = document.getElementById('search-popover');
-                if (popover && popover.showPopover) {
-                    popover.showPopover();
-                }
-            }
-        });
-
-        // Show popover after HTMX loads search results
-        document.body.addEventListener('htmx:afterSwap', function(event) {
-            if (event.detail.target.id === 'search-results') {
-                const popover = document.getElementById('search-popover');
-                const searchInput = document.getElementById('search-input');
-                if (popover && popover.showPopover && searchInput.value.length >= 2) {
-                    popover.showPopover();
-                }
-            }
-        });
     </script>
 </body>
 </html>

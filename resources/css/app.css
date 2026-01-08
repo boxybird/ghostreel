@@ -33,9 +33,68 @@
     display: block;
 }
 
-/* Native Popover positioning override */
-[popover] {
-    margin: 0;
-    position: absolute;
-    inset: unset;
+/* Search Dialog Styles */
+dialog#search-dialog {
+    margin: auto;
+    border: none;
+    padding: 0;
+    background: transparent;
+}
+
+dialog#search-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    animation: backdrop-fade 150ms ease-out;
+}
+
+/* Mobile: slide up from bottom */
+@media (max-width: 639px) {
+    dialog#search-dialog {
+        margin-bottom: 0;
+        margin-top: auto;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    dialog#search-dialog[open] {
+        animation: dialog-slide-up 250ms ease-out;
+    }
+}
+
+/* Desktop: fade and scale */
+@media (min-width: 640px) {
+    dialog#search-dialog[open] {
+        animation: dialog-fade-scale 200ms ease-out;
+    }
+}
+
+@keyframes dialog-slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes dialog-fade-scale {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes backdrop-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
