@@ -101,8 +101,9 @@ test.describe('Movie Search Dialog', () => {
     // Get the movie title from the search result
     const movieTitle = await firstResult.getAttribute('data-movie-title');
 
-    // Click the search result
-    await firstResult.click();
+    // Hover to reveal the overlay, then click "Add to grid" button
+    await firstResult.hover();
+    await firstResult.locator('button:has-text("Add to grid")').click();
 
     // Dialog should close
     const dialog = page.locator('dialog#search-dialog');
@@ -131,9 +132,10 @@ test.describe('Movie Search Dialog', () => {
       response.url().includes('/search?q=') && response.status() === 200
     );
 
-    // Click the first result
+    // Hover and click "Add to grid" on the first result
     const firstResult = page.locator('.search-result-card').first();
-    await firstResult.click();
+    await firstResult.hover();
+    await firstResult.locator('button:has-text("Add to grid")').click();
 
     // Wait for dialog to close and card to be added
     await page.waitForTimeout(400);

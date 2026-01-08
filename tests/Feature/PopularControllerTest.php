@@ -42,11 +42,11 @@ it('displays movies ordered by click count descending', function (): void {
     $movies = $response->viewData('movies');
 
     expect($movies)->toHaveCount(3);
-    expect($movies[0]['movie_title'])->toBe('Super Popular Movie');
+    expect($movies[0]['title'])->toBe('Super Popular Movie');
     expect($movies[0]['click_count'])->toBe(10);
-    expect($movies[1]['movie_title'])->toBe('Most Popular Movie');
+    expect($movies[1]['title'])->toBe('Most Popular Movie');
     expect($movies[1]['click_count'])->toBe(5);
-    expect($movies[2]['movie_title'])->toBe('Less Popular Movie');
+    expect($movies[2]['title'])->toBe('Less Popular Movie');
     expect($movies[2]['click_count'])->toBe(2);
 });
 

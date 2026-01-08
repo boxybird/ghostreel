@@ -48,85 +48,15 @@
 
 {{-- Movie Cards --}}
 @foreach($movies as $movie)
-    @if($movie['db_id'])
-        <a
-            href="{{ route('movies.show', $movie['db_id']) }}"
-            class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
-            data-movie-id="{{ $movie['id'] }}"
-            data-movie-title="{{ $movie['title'] }}"
-            data-poster-path="{{ $movie['poster_path'] }}"
-        >
-    @else
-        <div
-            class="movie-card group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20"
-            data-movie-id="{{ $movie['id'] }}"
-            data-movie-title="{{ $movie['title'] }}"
-            data-poster-path="{{ $movie['poster_path'] }}"
-        >
-    @endif
-        {{-- Heatmap Glow Effect --}}
-        @if($movie['click_count'] > 0)
-            <div class="absolute inset-0 z-10 pointer-events-none rounded-xl"
-                 style="box-shadow: inset 0 0 {{ min($movie['click_count'] * 8, 60) }}px {{ $movie['click_count'] > 5 ? 'var(--color-neon-pink)' : ($movie['click_count'] > 2 ? 'var(--color-neon-orange)' : 'var(--color-neon-cyan)') }}40;">
-            </div>
-        @endif
-
-        {{-- Poster --}}
-        @if($movie['poster_url'])
-            <img
-                src="{{ $movie['poster_url'] }}"
-                alt="{{ $movie['title'] }}"
-                class="w-full aspect-[2/3] object-cover"
-                loading="lazy"
-            >
-        @else
-            <div class="w-full aspect-[2/3] bg-dark-surface flex items-center justify-center">
-                <svg class="w-12 h-12 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-            </div>
-        @endif
-
-        {{-- Eye Icon Button - Log to Heatmap --}}
-        <button
-            type="button"
-            onclick="event.preventDefault(); event.stopPropagation(); logMovieClick(this.closest('.movie-card'));"
-            class="absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-cyan hover:text-dark-bg hover:border-neon-cyan transition-all duration-200"
-            title="Log view to heatmap"
-        >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-        </button>
-
-        {{-- Click Count Badge (moved to top-left to avoid collision with eye icon) --}}
-        @if($movie['click_count'] > 0)
-            <div class="absolute top-2 left-2 z-20 px-2 py-1 rounded-full text-xs font-bold
-                {{ $movie['click_count'] > 5 ? 'bg-neon-pink text-white' : ($movie['click_count'] > 2 ? 'bg-neon-orange text-dark-bg' : 'bg-neon-cyan text-dark-bg') }}">
-                {{ $movie['click_count'] }} {{ $movie['click_count'] === 1 ? 'view' : 'views' }}
-            </div>
-        @endif
-
-        {{-- Overlay --}}
-        <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <div class="absolute bottom-0 left-0 right-0 p-3">
-                <h3 class="text-sm font-semibold line-clamp-2">{{ $movie['title'] }}</h3>
-                @if($movie['vote_average'] > 0)
-                    <div class="flex items-center gap-1 mt-1">
-                        <svg class="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span class="text-xs text-text-muted">{{ number_format($movie['vote_average'], 1) }}</span>
-                    </div>
-                @endif
-            </div>
-        </div>
-    @if($movie['db_id'])
-        </a>
-    @else
-        </div>
-    @endif
+    <x-movie-card
+        :movie="$movie"
+        :clickable="true"
+        :show-eye-icon="true"
+        :show-heatmap-glow="true"
+        :show-click-badge="true"
+        click-badge-label="view"
+        :show-rating="true"
+    />
 @endforeach
 
 {{-- Load More Button for Genre --}}

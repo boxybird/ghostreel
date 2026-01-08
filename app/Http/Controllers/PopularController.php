@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Movie;
 use App\Models\MovieClick;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
@@ -26,7 +27,7 @@ class PopularController extends Controller
     /**
      * Get movies ordered by click count (most clicked first).
      *
-     * @return Collection<int, array{tmdb_movie_id: int, movie_title: string, poster_url: string|null, click_count: int}>
+     * @return Collection<int, array{id: int, db_id: int|null, title: string, poster_path: string|null, poster_url: string|null, click_count: int}>
      */
     private function getPopularMovies(): Collection
     {
@@ -38,9 +39,17 @@ class PopularController extends Controller
             ->limit(20)
             ->get();
 
+        // Get all tmdb_ids to look up local db_ids in one query
+        $tmdbIds = $results->pluck('tmdb_movie_id')->all();
+        $movieDbIds = Movie::query()
+            ->whereIn('tmdb_id', $tmdbIds)
+            ->pluck('id', 'tmdb_id');
+
         return $results->map(fn (MovieClick $click): array => [
-            'tmdb_movie_id' => $click->tmdb_movie_id,
-            'movie_title' => $click->movie_title,
+            'id' => $click->tmdb_movie_id,
+            'db_id' => $movieDbIds->get($click->tmdb_movie_id),
+            'title' => $click->movie_title,
+            'poster_path' => $click->poster_path,
             'poster_url' => TmdbService::posterUrl($click->poster_path),
             /** @phpstan-ignore-next-line Property exists via selectRaw */
             'click_count' => (int) $click->click_count,

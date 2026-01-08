@@ -190,33 +190,11 @@
                     <h2 class="text-xl md:text-2xl font-bold mb-4">Similar Movies</h2>
                     <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
                         @foreach($similarMovies as $similar)
-                            @if($similar['db_id'])
-                                <a
-                                    href="{{ route('movies.show', $similar['db_id']) }}"
-                                    class="shrink-0 w-24 md:w-28 group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20"
-                                >
-                            @else
-                                <div class="shrink-0 w-24 md:w-28 group relative rounded-xl overflow-hidden bg-dark-card opacity-60">
-                            @endif
-                                @if($similar['poster_url'])
-                                    <img
-                                        src="{{ $similar['poster_url'] }}"
-                                        alt="{{ $similar['title'] }}"
-                                        class="w-full aspect-[2/3] object-cover"
-                                        loading="lazy"
-                                    >
-                                @else
-                                    <div class="w-full aspect-[2/3] bg-dark-surface flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                @endif
-                            @if($similar['db_id'])
-                                </a>
-                            @else
-                                </div>
-                            @endif
+                            <x-movie-card
+                                :movie="$similar"
+                                :clickable="true"
+                                variant="minimal"
+                            />
                         @endforeach
                     </div>
                 </section>

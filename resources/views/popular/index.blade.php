@@ -20,42 +20,16 @@
         @else
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
                 @foreach($movies as $index => $movie)
-                    <div class="group relative rounded-xl overflow-hidden bg-dark-card transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-neon-cyan/20">
-                        <!-- Rank Badge -->
-                        <div class="absolute top-2 left-2 z-20 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                            {{ $index === 0 ? 'bg-yellow-400 text-dark-bg' : ($index === 1 ? 'bg-gray-300 text-dark-bg' : ($index === 2 ? 'bg-amber-600 text-white' : 'bg-dark-surface text-text-primary')) }}">
-                            {{ $index + 1 }}
-                        </div>
-
-                        <!-- Click Count Badge -->
-                        <div class="absolute top-2 right-2 z-20 px-2 py-1 rounded-full text-xs font-bold
-                            {{ $movie['click_count'] > 5 ? 'bg-neon-pink text-white' : ($movie['click_count'] > 2 ? 'bg-neon-orange text-dark-bg' : 'bg-neon-cyan text-dark-bg') }}">
-                            {{ $movie['click_count'] }} {{ $movie['click_count'] === 1 ? 'click' : 'clicks' }}
-                        </div>
-
-                        <!-- Poster -->
-                        @if($movie['poster_url'])
-                            <img
-                                src="{{ $movie['poster_url'] }}"
-                                alt="{{ $movie['movie_title'] }}"
-                                class="w-full aspect-[2/3] object-cover"
-                                loading="lazy"
-                            >
-                        @else
-                            <div class="w-full aspect-[2/3] bg-dark-surface flex items-center justify-center">
-                                <svg class="w-12 h-12 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                        @endif
-
-                        <!-- Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div class="absolute bottom-0 left-0 right-0 p-3">
-                                <h3 class="text-sm font-semibold line-clamp-2">{{ $movie['movie_title'] }}</h3>
-                            </div>
-                        </div>
-                    </div>
+                    <x-movie-card
+                        :movie="$movie"
+                        :clickable="true"
+                        :show-eye-icon="false"
+                        :show-heatmap-glow="false"
+                        :show-click-badge="true"
+                        click-badge-label="click"
+                        :rank="$index + 1"
+                        :show-rating="false"
+                    />
                 @endforeach
             </div>
         @endif
