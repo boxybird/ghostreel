@@ -1,0 +1,23 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - config/
+        - database/
+        - routes/
+        - tests/
+
+    level: 5
+
+    universalObjectCratesClasses:
+        - PHPUnit\Framework\TestCase
+
+    databaseMigrationsPath:
+        - database/migrations
+
+    checkModelProperties: true
+
+    ignoreErrors:
+        - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|post|put|patch|delete|actingAs|withSession|withoutMiddleware|from|assertDatabaseHas|assertDatabaseMissing|assertSoftDeleted|artisan)\(\)#'
