@@ -15,11 +15,11 @@
 <body class="bg-dark-bg text-text-primary min-h-screen">
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-20 lg:w-64 bg-dark-surface border-r border-white/5 flex flex-col py-6 shrink-0">
+        <aside class="w-14 lg:w-64 bg-dark-surface border-r border-white/5 flex flex-col py-6 shrink-0">
             <!-- Logo -->
-            <div class="px-4 lg:px-6 mb-8">
+            <div class="px-2 lg:px-6 mb-8">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
+                    <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
@@ -29,10 +29,10 @@
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 px-2 lg:px-4">
+            <nav class="flex-1 px-1 lg:px-4">
                 <ul class="space-y-1">
                     <li>
-                        <a href="{{ route('heatmap.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:bg-white/5 hover:text-text-primary transition-colors">
+                        <a href="{{ route('heatmap.index') }}" class="flex items-center gap-3 px-2 py-2 lg:px-3 lg:py-2.5 rounded-lg text-text-muted hover:bg-white/5 hover:text-text-primary transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
@@ -40,21 +40,14 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('popular.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/10 text-neon-cyan">
+                        <a href="{{ route('popular.index') }}" class="flex items-center gap-3 px-2 py-2 lg:px-3 lg:py-2.5 rounded-lg bg-white/10 text-neon-cyan">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
                             </svg>
                             <span class="hidden lg:block">Popular</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:bg-white/5 hover:text-text-primary transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                            </svg>
-                            <span class="hidden lg:block">Movies</span>
-                        </a>
-                    </li>
+
                 </ul>
             </nav>
         </aside>
