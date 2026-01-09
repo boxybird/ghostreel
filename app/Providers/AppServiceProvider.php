@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\MovieRepository;
 use App\Services\TmdbService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +28,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Model::shouldBeStrict();
     }
 }
