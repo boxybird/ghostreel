@@ -7,8 +7,8 @@
             style="display: none;"
         >
             <p class="text-sm text-text-muted">
-                <span class="text-white font-medium">Log it. See what's hot.</span>
-                Click the eye icon on any movie to track your watch and shape the heatmap — no sign-up needed.
+                <span class="text-white font-medium">Leave a trace without a trace.</span>
+                Anonymously 'ghost' movies to influence the global heatmap and discover what the community is watching today.
             </p>
             <button
                 type="button"
