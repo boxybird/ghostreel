@@ -5,24 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Movie;
 use App\Services\MovieRepository;
 use App\Services\TmdbService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
-class HeatmapController extends Controller
+class TrendingMoviesController extends Controller
 {
     public function __construct(
         private readonly MovieRepository $movieRepo,
     ) {}
 
-    /**
-     * Display the main heatmap view with trending movies.
-     */
     public function index(Request $request): View
     {
-        // Ensure we have data (dispatches job if needed)
-        $this->movieRepo->ensureTrendingDataAvailable();
+        $page = (int) $request->input('page', 1);
 
-        $paginator = $this->movieRepo->getTrendingMovies(page: 1);
+        $paginator = $this->movieRepo->getTrendingMovies(page: $page);
         $trendingMovies = $paginator->items();
 
         $tmdbIds = collect($trendingMovies)->pluck('tmdb_id')->toArray();
@@ -43,13 +39,16 @@ class HeatmapController extends Controller
             ];
         });
 
-        $recentViews = $this->movieRepo->getRecentViews();
-        $genres = $this->movieRepo->getAllGenres();
+        // Include genres for OOB swap when returning to page 1 (filter cleared)
+        $genres = null;
+        if ($page === 1) {
+            $genreModels = $this->movieRepo->getAllGenres();
+            $genres = $genreModels->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]);
+        }
 
-        return view('heatmap.index', [
+        return view('heatmap.partials.movie-cards', [
             'movies' => $movies,
-            'recentViews' => $recentViews,
-            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
+            'genres' => $genres,
             'currentPage' => $paginator->currentPage(),
             'totalPages' => $paginator->lastPage(),
             'hasMorePages' => $paginator->hasMorePages(),

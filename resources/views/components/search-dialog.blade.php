@@ -15,7 +15,7 @@
             placeholder="Search for movies..."
             autocomplete="off"
             class="flex-1 bg-transparent text-lg text-text-primary outline-none placeholder:text-text-muted caret-neon-cyan"
-            hx-get="{{ route('search') }}"
+            hx-get="{{ route('search.index') }}"
             hx-trigger="input changed delay:300ms"
             hx-target="#search-results"
             hx-swap="innerHTML"

@@ -92,7 +92,7 @@ it('displays movies from database fallback when no snapshot exists', function ()
 });
 
 it('logs a movie click and returns recent views', function (): void {
-    $response = $this->postJson('/click', [
+    $response = $this->postJson('/clicks', [
         'tmdb_movie_id' => 123,
         'movie_title' => 'Test Movie',
         'poster_path' => '/test.jpg',
@@ -113,7 +113,7 @@ it('logs a movie click and returns recent views', function (): void {
 });
 
 it('stores the visitor IP address when logging a click', function (): void {
-    $this->postJson('/click', [
+    $this->postJson('/clicks', [
         'tmdb_movie_id' => 789,
         'movie_title' => 'IP Test Movie',
     ]);
@@ -125,14 +125,14 @@ it('stores the visitor IP address when logging a click', function (): void {
 });
 
 it('validates required fields when logging a click', function (): void {
-    $response = $this->postJson('/click', []);
+    $response = $this->postJson('/clicks', []);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['tmdb_movie_id', 'movie_title']);
 });
 
 it('allows null poster_path when logging a click', function (): void {
-    $response = $this->postJson('/click', [
+    $response = $this->postJson('/clicks', [
         'tmdb_movie_id' => 999,
         'movie_title' => 'No Poster Movie',
     ]);
@@ -148,7 +148,7 @@ it('allows null poster_path when logging a click', function (): void {
 it('returns recent views via API endpoint', function (): void {
     MovieClick::factory()->count(3)->create();
 
-    $response = $this->getJson('/recent-views');
+    $response = $this->getJson('/recent-clicks');
 
     $response->assertSuccessful();
     $response->assertJsonStructure([
@@ -161,7 +161,7 @@ it('returns recent views via API endpoint', function (): void {
 it('limits recent views to 10 items', function (): void {
     MovieClick::factory()->count(15)->create();
 
-    $response = $this->getJson('/recent-views');
+    $response = $this->getJson('/recent-clicks');
 
     $response->assertSuccessful();
     expect($response->json('recent_views'))->toHaveCount(10);

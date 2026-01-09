@@ -21,7 +21,7 @@ class SearchController extends Controller
      * Search movies: local-first with TMDB API fallback.
      * Returns Blade fragment for HTMX.
      */
-    public function search(SearchRequest $request): View
+    public function index(SearchRequest $request): View
     {
         $query = $request->validated('q');
         $page = $request->validated('page', 1);

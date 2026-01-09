@@ -9,10 +9,12 @@ use App\Jobs\SyncTrendingMoviesJob;
 use App\Models\Genre;
 use App\Models\GenreSnapshot;
 use App\Models\Movie;
+use App\Models\MovieClick;
 use App\Models\TrendingSnapshot;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
 
 class MovieRepository
 {
@@ -77,15 +79,104 @@ class MovieRepository
     /**
      * Search movies by title in the local database.
      *
-     * @return Collection<int, Movie>
+     * @return EloquentCollection<int, Movie>
      */
-    public function searchMovies(string $query, int $limit = 20): Collection
+    public function searchMovies(string $query, int $limit = 20): EloquentCollection
     {
         return Movie::query()
             ->search($query)
             ->orderByDesc('tmdb_popularity')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Get click counts for given movie IDs (last 24 hours).
+     *
+     * @param  array<int>  $movieIds
+     * @return array<int, int>
+     */
+    public function getClickCounts(array $movieIds): array
+    {
+        if ($movieIds === []) {
+            return [];
+        }
+
+        return MovieClick::query()
+            ->selectRaw('tmdb_movie_id, COUNT(*) as click_count')
+            ->whereIn('tmdb_movie_id', $movieIds)
+            ->where('clicked_at', '>=', now()->subDay())
+            ->groupBy('tmdb_movie_id')
+            ->pluck('click_count', 'tmdb_movie_id')
+            ->toArray();
+    }
+
+    /**
+     * Get the most recent movie views for the sidebar.
+     *
+     * @return Collection<int, array{id: int, tmdb_movie_id: int, movie_title: string, poster_url: ?string, clicked_at: string}>
+     */
+    public function getRecentViews(int $limit = 10): Collection
+    {
+        return MovieClick::query()
+            ->select(['id', 'tmdb_movie_id', 'movie_title', 'poster_path', 'clicked_at'])
+            ->orderByDesc('clicked_at')
+            ->limit($limit)
+            ->get()
+            ->map(fn (MovieClick $click): array => [
+                'id' => $click->id,
+                'tmdb_movie_id' => $click->tmdb_movie_id,
+                'movie_title' => $click->movie_title,
+                'poster_url' => TmdbService::posterUrl($click->poster_path, 'w185'),
+                'clicked_at' => $click->clicked_at->diffForHumans(),
+            ]);
+    }
+
+    /**
+     * Get heatmap aggregation data for all movies (last 24 hours).
+     *
+     * @return array<int, int>
+     */
+    public function getHeatmapData(): array
+    {
+        return MovieClick::query()
+            ->selectRaw('tmdb_movie_id, COUNT(*) as click_count')
+            ->where('clicked_at', '>=', now()->subDay())
+            ->groupBy('tmdb_movie_id')
+            ->pluck('click_count', 'tmdb_movie_id')
+            ->toArray();
+    }
+
+    /**
+     * Get movies ordered by click count (most clicked first).
+     *
+     * @return Collection<int, array{id: int, db_id: int|null, title: string, poster_path: string|null, poster_url: string|null, click_count: int}>
+     */
+    public function getPopularMovies(int $limit = 20): Collection
+    {
+        /** @var Collection<int, MovieClick> $results */
+        $results = MovieClick::query()
+            ->selectRaw('tmdb_movie_id, movie_title, MAX(poster_path) as poster_path, COUNT(*) as click_count')
+            ->groupBy('tmdb_movie_id', 'movie_title')
+            ->orderByDesc('click_count')
+            ->limit($limit)
+            ->get();
+
+        // Get all tmdb_ids to look up local db_ids in one query
+        $tmdbIds = $results->pluck('tmdb_movie_id')->all();
+        $movieDbIds = Movie::query()
+            ->whereIn('tmdb_id', $tmdbIds)
+            ->pluck('id', 'tmdb_id');
+
+        return $results->map(fn (MovieClick $click): array => [
+            'id' => $click->tmdb_movie_id,
+            'db_id' => $movieDbIds->get($click->tmdb_movie_id),
+            'title' => $click->movie_title,
+            'poster_path' => $click->poster_path,
+            'poster_url' => TmdbService::posterUrl($click->poster_path),
+            /** @phpstan-ignore-next-line Property exists via selectRaw */
+            'click_count' => (int) $click->click_count,
+        ]);
     }
 
     /**

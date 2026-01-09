@@ -220,7 +220,7 @@
             `;
 
             try {
-                const response = await fetch('{{ route('heatmap.click') }}', {
+                const response = await fetch('{{ route('clicks.store') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -1,23 +1,35 @@
 <?php
 
-use App\Http\Controllers\GenreController;
+use App\Http\Controllers\GenreMoviesController;
+use App\Http\Controllers\GenresController;
 use App\Http\Controllers\HeatmapController;
-use App\Http\Controllers\MovieController;
-use App\Http\Controllers\PopularController;
+use App\Http\Controllers\HeatmapDataController;
+use App\Http\Controllers\MovieClicksController;
+use App\Http\Controllers\MoviesController;
+use App\Http\Controllers\PopularMoviesController;
+use App\Http\Controllers\RecentClicksController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\TrendingMoviesController;
 use Illuminate\Support\Facades\Route;
 
+// Heatmap Dashboard
 Route::get('/', [HeatmapController::class, 'index'])->name('heatmap.index');
-Route::get('/trending', [HeatmapController::class, 'trending'])->name('heatmap.trending');
-Route::post('/click', [HeatmapController::class, 'logClick'])->name('heatmap.click');
-Route::get('/recent-views', [HeatmapController::class, 'recentViews'])->name('heatmap.recent');
-Route::get('/heatmap-data', [HeatmapController::class, 'heatmapData'])->name('heatmap.data');
 
-Route::get('/popular', [PopularController::class, 'index'])->name('popular.index');
+// Heatmap Data & Interactions
+Route::get('/heatmap-data', [HeatmapDataController::class, 'index'])->name('heatmap.data');
+Route::post('/clicks', [MovieClicksController::class, 'store'])->name('clicks.store');
+Route::get('/recent-clicks', [RecentClicksController::class, 'index'])->name('clicks.recent');
 
-Route::get('/search', [SearchController::class, 'search'])->name('search');
+// Trending & Popular
+Route::get('/trending', [TrendingMoviesController::class, 'index'])->name('trending.index');
+Route::get('/popular', [PopularMoviesController::class, 'index'])->name('popular.index');
 
-Route::get('/genres', [GenreController::class, 'index'])->name('genres.index');
-Route::get('/genres/{genreId}', [GenreController::class, 'show'])->name('genres.show')->whereNumber('genreId');
+// Genres
+Route::get('/genres', [GenresController::class, 'index'])->name('genres.index');
+Route::get('/genres/{genreId}/movies', [GenreMoviesController::class, 'index'])->name('genres.movies.index')->whereNumber('genreId');
 
-Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
+// Search
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+
+// Movie Details
+Route::get('/movies/{movie}', [MoviesController::class, 'show'])->name('movies.show');

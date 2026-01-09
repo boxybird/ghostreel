@@ -37,7 +37,7 @@ test.describe('Movie Heatmap', () => {
 
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
+      response.url().includes('/clicks') && response.status() === 200
     );
 
     // Click the ghost icon (not the card, which now navigates)
@@ -70,7 +70,7 @@ test.describe('Movie Heatmap', () => {
 
     // Set up response listener before clicking
     const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
+      response.url().includes('/clicks') && response.status() === 200
     );
 
     // Click the ghost icon (not the card itself, which now navigates)
@@ -135,7 +135,7 @@ test.describe('Movie Heatmap', () => {
 
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
+      response.url().includes('/clicks') && response.status() === 200
     );
 
     // Click the ghost icon

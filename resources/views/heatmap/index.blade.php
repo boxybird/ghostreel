@@ -64,7 +64,7 @@
             <!-- All (Trending) Chip -->
             <button
                 type="button"
-                hx-get="{{ route('heatmap.trending') }}"
+                hx-get="{{ route('trending.index') }}"
                 hx-target="#movie-grid"
                 hx-swap="innerHTML"
                 class="genre-chip genre-chip-active shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
@@ -76,7 +76,7 @@
             @foreach($genres as $genre)
                 <button
                     type="button"
-                    hx-get="{{ route('genres.show', $genre['id']) }}"
+                    hx-get="{{ route('genres.movies.index', $genre['id']) }}"
                     hx-target="#movie-grid"
                     hx-swap="innerHTML"
                     class="genre-chip shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"

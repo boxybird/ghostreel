@@ -115,7 +115,7 @@ it('returns movies filtered by genre', function (): void {
         'snapshot_date' => now()->toDateString(),
     ]);
 
-    $response = $this->get('/genres/28');
+    $response = $this->get('/genres/28/movies');
 
     $response->assertSuccessful();
     $response->assertViewIs('genre.movies');
@@ -139,7 +139,7 @@ it('displays genre name in the response', function (): void {
         'snapshot_date' => now()->toDateString(),
     ]);
 
-    $response = $this->get('/genres/35');
+    $response = $this->get('/genres/35/movies');
 
     $response->assertSuccessful();
     $response->assertViewHas('genreName', 'Comedy');
@@ -162,7 +162,7 @@ it('handles pagination for genre movies', function (): void {
         ]);
     }
 
-    $response = $this->get('/genres/28?page=2');
+    $response = $this->get('/genres/28/movies?page=2');
 
     $response->assertSuccessful();
     $response->assertViewIs('genre.movies');
@@ -186,7 +186,7 @@ it('includes click counts for genre movies', function (): void {
         'clicked_at' => now(),
     ]);
 
-    $response = $this->get('/genres/28');
+    $response = $this->get('/genres/28/movies');
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
@@ -220,7 +220,7 @@ it('excludes old clicks from genre movie click counts', function (): void {
         'clicked_at' => now(),
     ]);
 
-    $response = $this->get('/genres/28');
+    $response = $this->get('/genres/28/movies');
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
@@ -234,7 +234,7 @@ it('excludes old clicks from genre movie click counts', function (): void {
 
 it('returns 404 for unknown genre', function (): void {
     // When no genre exists with this TMDB ID, return 404
-    $response = $this->get('/genres/99999');
+    $response = $this->get('/genres/99999/movies');
 
     $response->assertNotFound();
 });
@@ -253,7 +253,7 @@ it('caps total pages at 500 when data exceeds limit', function (): void {
         'snapshot_date' => now()->toDateString(),
     ]);
 
-    $response = $this->get('/genres/28');
+    $response = $this->get('/genres/28/movies');
 
     $response->assertSuccessful();
     // Should be 1 since we only have 1 movie
@@ -261,7 +261,7 @@ it('caps total pages at 500 when data exceeds limit', function (): void {
 });
 
 it('rejects non-numeric genre IDs', function (): void {
-    $response = $this->get('/genres/abc');
+    $response = $this->get('/genres/abc/movies');
 
     $response->assertNotFound();
 });

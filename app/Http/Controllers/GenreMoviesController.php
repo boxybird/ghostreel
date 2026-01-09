@@ -2,43 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Genre;
 use App\Models\Movie;
-use App\Models\MovieClick;
 use App\Services\MovieRepository;
 use App\Services\TmdbService;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
-class GenreController extends Controller
+class GenreMoviesController extends Controller
 {
     public function __construct(
         private readonly MovieRepository $movieRepo,
     ) {}
 
-    /**
-     * Get list of all genres (JSON for chips).
-     */
-    public function index(): JsonResponse
-    {
-        $genres = $this->movieRepo->getAllGenres();
-
-        return response()->json([
-            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
-        ]);
-    }
-
-    /**
-     * Browse movies by genre (returns partial for HTMX).
-     */
-    public function show(Request $request, int $genreId): View
+    public function index(Request $request, int $genreId): View
     {
         $page = (int) $request->input('page', 1);
 
         // Find genre by TMDB ID
         $genre = $this->movieRepo->getGenreByTmdbId($genreId);
 
-        if (! $genre instanceof \App\Models\Genre) {
+        if (! $genre instanceof Genre) {
             abort(404, 'Genre not found');
         }
 
@@ -51,7 +35,7 @@ class GenreController extends Controller
         $genreName = $genre->name;
 
         $tmdbIds = collect($genreMovies)->pluck('tmdb_id')->toArray();
-        $clickCounts = $this->getClickCounts($tmdbIds);
+        $clickCounts = $this->movieRepo->getClickCounts($tmdbIds);
 
         $moviesWithData = collect($genreMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
@@ -79,26 +63,5 @@ class GenreController extends Controller
             'totalPages' => min($paginator->lastPage(), 500), // TMDB limits to 500 pages
             'hasMorePages' => $paginator->hasMorePages() && $paginator->currentPage() < 500,
         ]);
-    }
-
-    /**
-     * Get click counts for given movie IDs (last 24 hours).
-     *
-     * @param  array<int>  $movieIds
-     * @return array<int, int>
-     */
-    private function getClickCounts(array $movieIds): array
-    {
-        if ($movieIds === []) {
-            return [];
-        }
-
-        return MovieClick::query()
-            ->selectRaw('tmdb_movie_id, COUNT(*) as click_count')
-            ->whereIn('tmdb_movie_id', $movieIds)
-            ->where('clicked_at', '>=', now()->subDay())
-            ->groupBy('tmdb_movie_id')
-            ->pluck('click_count', 'tmdb_movie_id')
-            ->toArray();
     }
 }

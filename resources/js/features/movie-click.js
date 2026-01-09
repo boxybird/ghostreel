@@ -24,7 +24,7 @@ export async function logMovieClick(card) {
     }
 
     try {
-        const response = await fetch('/click', {
+        const response = await fetch('/clicks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ export async function logMovieClickFromSearch(card) {
     }
 
     try {
-        const response = await fetch('/click', {
+        const response = await fetch('/clicks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

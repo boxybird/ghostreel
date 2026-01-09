@@ -40,7 +40,7 @@ test.describe('Movie Detail Page', () => {
 
     // Set up response listener for the click API
     const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
+      response.url().includes('/clicks') && response.status() === 200
     );
 
     // Click the ghost icon
@@ -97,7 +97,7 @@ test.describe('Movie Detail Page', () => {
 
     // Set up response listener
     const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/click') && response.status() === 200
+      response.url().includes('/clicks') && response.status() === 200
     );
 
     // Click the button
