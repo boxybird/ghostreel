@@ -185,17 +185,22 @@
             </div>
         @endif
 
-        {{-- Rank Badge (top-left) --}}
-        @if($rank !== null)
-            <div class="absolute top-2 left-2 z-20 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {{ $rankClasses }}">
-                {{ $rank }}
-            </div>
-        @endif
+        {{-- Combined Stats Badge (Rank + Clicks) --}}
+        @if($rank !== null || ($showClickBadge && $clickCount > 0))
+            <div class="absolute top-2 left-2 z-20 flex items-center rounded-full overflow-hidden border border-white/10 shadow-lg backdrop-blur-sm">
+                {{-- Rank Segment --}}
+                @if($rank !== null)
+                    <div class="px-2.5 py-1 text-xs font-bold {{ $rankClasses }}">
+                        {{ $rank }}
+                    </div>
+                @endif
 
-        {{-- Click Count Badge --}}
-        @if($showClickBadge && $clickCount > 0)
-            <div class="absolute top-2 {{ $rank !== null ? 'right-2' : 'left-2' }} z-20 px-2 py-1 rounded-full text-xs font-bold {{ $badgeClasses }}">
-                {{ $clickCount }} {{ $clickCount === 1 ? $clickBadgeLabel : Str::plural($clickBadgeLabel) }}
+                {{-- Click Count Segment --}}
+                @if($showClickBadge && $clickCount > 0)
+                    <div class="px-2 py-1 text-[10px] uppercase font-bold {{ $badgeClasses }} {{ $rank !== null ? 'border-l border-dark-bg/20' : '' }}">
+                        {{ $clickCount }} {{ $clickCount === 1 ? $clickBadgeLabel : Str::plural($clickBadgeLabel) }}
+                    </div>
+                @endif
             </div>
         @endif
 
