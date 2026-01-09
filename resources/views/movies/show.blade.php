@@ -46,8 +46,10 @@
             <button
                 type="button"
                 id="log-view-btn"
-                onclick="logMovieView()"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-semibold rounded-lg hover:bg-neon-cyan/90 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-neon-cyan/30"
+                hx-post="{{ route('clicks.store') }}"
+                hx-vals="{{ json_encode(['tmdb_movie_id' => (int)$movie->tmdb_id, 'movie_title' => $movie->title, 'poster_path' => $movie->poster_path]) }}"
+                hx-swap="none"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-semibold rounded-lg hover:bg-neon-cyan/90 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-neon-cyan/30 htmx-trigger"
             >
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 10h.01"/>
@@ -120,7 +122,7 @@
 
                         <!-- Community Stats -->
                         <div class="flex flex-wrap justify-center gap-4">
-                            <div class="flex items-center gap-2 px-4 py-2 bg-neon-cyan/10 border border-neon-cyan/30 rounded-full">
+                            <div id="movie-stats-today" class="flex items-center gap-2 px-4 py-2 bg-neon-cyan/10 border border-neon-cyan/30 rounded-full">
                                 <svg class="w-5 h-5 text-neon-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 10h.01"/>
                                     <path d="M15 10h.01"/>
@@ -205,62 +207,30 @@
     </div>
 
     <script>
-        async function logMovieView() {
-            const button = document.getElementById('log-view-btn');
-            const originalContent = button.innerHTML;
+        // HTMX will handle the logging now. 
+        // We can add logic here to handle success states via htmx events if needed.
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.target.id === 'log-view-btn' && evt.detail.successful) {
+                const btn = evt.detail.target;
+                const originalContent = btn.innerHTML;
+                
+                btn.classList.remove('bg-neon-cyan', 'hover:bg-neon-cyan/90');
+                btn.classList.add('bg-green-500', 'hover:bg-green-500/90');
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Movie Ghosted!</span>
+                `;
 
-            // Show loading state
-            button.disabled = true;
-            button.innerHTML = `
-                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Ghosting...</span>
-            `;
-
-            try {
-                const response = await fetch('{{ route('clicks.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        tmdb_movie_id: {{ $movie->tmdb_id }},
-                        movie_title: @json($movie->title),
-                        poster_path: @json($movie->poster_path),
-                    }),
-                });
-
-                if (response.ok) {
-                    // Show success state
-                    button.classList.remove('bg-neon-cyan', 'hover:bg-neon-cyan/90');
-                    button.classList.add('bg-green-500', 'hover:bg-green-500/90');
-                    button.innerHTML = `
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Movie Ghosted!</span>
-                    `;
-
-                    // Reset after 2 seconds
-                    setTimeout(() => {
-                        button.disabled = false;
-                        button.classList.remove('bg-green-500', 'hover:bg-green-500/90');
-                        button.classList.add('bg-neon-cyan', 'hover:bg-neon-cyan/90');
-                        button.innerHTML = originalContent;
-                    }, 2000);
-                } else {
-                    throw new Error('Failed to log view');
-                }
-            } catch (error) {
-                console.error('Failed to log view:', error);
-                button.disabled = false;
-                button.innerHTML = originalContent;
+                setTimeout(() => {
+                    btn.classList.remove('bg-green-500', 'hover:bg-green-500/90');
+                    btn.classList.add('bg-neon-cyan', 'hover:bg-neon-cyan/90');
+                    btn.innerHTML = originalContent;
+                }, 2000);
             }
-        }
+        });
     </script>
+
 </body>
 </html>

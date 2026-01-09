@@ -93,8 +93,11 @@
         @if($showGhostAction)
             <button
                 type="button"
-                onclick="logMovieClickFromSearch(this.closest('.search-result-card'));"
-                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 cursor-pointer rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost"
+                hx-post="{{ route('clicks.store') }}"
+                hx-vals="{{ json_encode(['tmdb_movie_id' => (int)$movieId, 'movie_title' => $title, 'poster_path' => $posterPath]) }}"
+                hx-swap="none"
+                onclick="event.preventDefault(); event.stopPropagation();"
+                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 cursor-pointer rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost htmx-trigger"
                 title="Add Ghost View"
             >
                 <svg class="w-4 h-4 transition-transform group-hover/ghost:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -182,29 +185,27 @@
 
         {{-- Combined Stats Badge (Rank + Clicks) --}}
         @if($rank !== null || ($showClickBadge && $clickCount > 0))
-            <div class="absolute top-2 left-2 z-20 flex items-center rounded-full overflow-hidden border border-white/10 shadow-lg backdrop-blur-sm">
-                {{-- Rank Segment --}}
-                @if($rank !== null)
-                    <div class="px-2.5 py-1 text-xs font-bold {{ $rankClasses }}">
-                        {{ $rank }}
-                    </div>
-                @endif
-
-                {{-- Click Count Segment --}}
-                @if($showClickBadge && $clickCount > 0)
-                    <div class="px-2 py-1 text-[10px] uppercase font-bold {{ $badgeClasses }} {{ $rank !== null ? 'border-l border-dark-bg/20' : '' }}">
-                        {{ $clickCount }} {{ $clickCount === 1 ? $clickBadgeLabel : Str::plural($clickBadgeLabel) }}
-                    </div>
-                @endif
-            </div>
+            @include('heatmap.partials.movie-badge', [
+                'movieId' => $movieId,
+                'rank' => $rank,
+                'rankClasses' => $rankClasses,
+                'showClickBadge' => $showClickBadge,
+                'clickCount' => $clickCount,
+                'badgeClasses' => $badgeClasses,
+                'clickBadgeLabel' => $clickBadgeLabel
+            ])
         @endif
 
         {{-- Ghost Quick Action Button --}}
         @if($showGhostAction)
             <button
                 type="button"
-                onclick="event.preventDefault(); event.stopPropagation(); logMovieClick(this.closest('.movie-card'));"
-                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 lg:p-3 cursor-pointer rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost"
+                hx-post="{{ route('clicks.store') }}"
+                hx-vals="{{ json_encode(['tmdb_movie_id' => (int)$movieId, 'movie_title' => $title, 'poster_path' => $posterPath, 'rank' => $rank]) }}"
+                hx-target="#movie-badge-{{ $movieId }}"
+                hx-swap="outerHTML"
+                onclick="event.preventDefault(); event.stopPropagation();"
+                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 lg:p-3 cursor-pointer rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost htmx-trigger"
                 title="Add Ghost View"
             >
                 <svg class="w-4 h-4 transition-transform group-hover/ghost:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

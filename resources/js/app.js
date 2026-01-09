@@ -2,7 +2,6 @@ import './bootstrap';
 import htmx from 'htmx.org';
 
 // Feature modules - import to make functions available globally
-import './features/movie-click.js';
 import './features/search-dialog.js';
 
 // Make htmx available globally
