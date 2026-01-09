@@ -16,7 +16,7 @@ test.describe('Movie Heatmap', () => {
     await expect(movieCards.first()).toBeVisible();
   });
 
-  test('clicking eye icon updates the Recent Views sidebar', async ({ page }) => {
+  test('clicking ghost icon updates the Recent Views sidebar', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -31,17 +31,17 @@ test.describe('Movie Heatmap', () => {
     const recentViewsSidebar = page.locator('#recent-views-sidebar');
     const initialRecentViewsCount = await recentViewsSidebar.locator('> div').count();
 
-    // Find the eye icon button
-    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
-    await expect(eyeButton).toBeVisible();
+    // Find the ghost icon button
+    const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
+    await expect(ghostButton).toBeVisible();
 
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the eye icon (not the card, which now navigates)
-    await eyeButton.click();
+    // Click the ghost icon (not the card, which now navigates)
+    await ghostButton.click();
 
     // Wait for the API call to complete
     await responsePromise;
@@ -54,7 +54,7 @@ test.describe('Movie Heatmap', () => {
     expect(newRecentViewsCount).toBeGreaterThanOrEqual(initialRecentViewsCount);
   });
 
-  test('movie card shows click count badge after clicking eye icon', async ({ page }) => {
+  test('movie card shows click count badge after clicking ghost icon', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -64,17 +64,17 @@ test.describe('Movie Heatmap', () => {
     // Find a movie card
     const firstMovieCard = movieCards.first();
 
-    // Find the eye icon button
-    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
-    await expect(eyeButton).toBeVisible();
+    // Find the ghost icon button
+    const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
+    await expect(ghostButton).toBeVisible();
 
     // Set up response listener before clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the eye icon (not the card itself, which now navigates)
-    await eyeButton.click();
+    // Click the ghost icon (not the card itself, which now navigates)
+    await ghostButton.click();
 
     // Wait for the API response
     await responsePromise;
@@ -110,7 +110,7 @@ test.describe('Movie Heatmap', () => {
     await expect(dialog).toBeVisible();
   });
 
-  test('clicking eye icon increments the view count badge', async ({ page }) => {
+  test('clicking ghost icon increments the view count badge', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
@@ -119,7 +119,7 @@ test.describe('Movie Heatmap', () => {
 
     const firstMovieCard = movieCards.first();
 
-    // Badge is now top-left (top-right is the eye icon)
+    // Badge is now top-left (top-right is the ghost icon)
     const badge = firstMovieCard.locator('[class*="absolute top-2 left-2"]');
     const badgeExisted = await badge.isVisible();
     let initialCount = 0;
@@ -129,17 +129,17 @@ test.describe('Movie Heatmap', () => {
       initialCount = match ? parseInt(match[1]) : 0;
     }
 
-    // Find eye icon
-    const eyeButton = firstMovieCard.locator('button[title="Log view to heatmap"]');
-    await expect(eyeButton).toBeVisible();
+    // Find ghost icon
+    const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
+    await expect(ghostButton).toBeVisible();
 
     // Set up response listener BEFORE clicking
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the eye icon
-    await eyeButton.click();
+    // Click the ghost icon
+    await ghostButton.click();
 
     // Wait for API response
     await responsePromise;
