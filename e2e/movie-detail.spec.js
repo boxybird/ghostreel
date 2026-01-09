@@ -80,7 +80,7 @@ test.describe('Movie Detail Page', () => {
     await expect(page.getByText(/views today/i)).toBeVisible();
 
     // Log View button
-    await expect(page.getByRole('button', { name: /Log View to Heatmap/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Ghost this Movie/i })).toBeVisible();
   });
 
   test('log view button on detail page tracks click', async ({ page }) => {
@@ -92,7 +92,7 @@ test.describe('Movie Detail Page', () => {
     await expect(page).toHaveURL(/\/movies\/\d+/);
 
     // Find the Log View button
-    const logViewButton = page.getByRole('button', { name: /Log View to Heatmap/i });
+    const logViewButton = page.getByRole('button', { name: /Ghost this Movie/i });
     await expect(logViewButton).toBeVisible();
 
     // Set up response listener
