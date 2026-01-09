@@ -38,7 +38,7 @@ class GenreController extends Controller
         // Find genre by TMDB ID
         $genre = $this->movieRepo->getGenreByTmdbId($genreId);
 
-        if (!$genre instanceof \App\Models\Genre) {
+        if (! $genre instanceof \App\Models\Genre) {
             abort(404, 'Genre not found');
         }
 

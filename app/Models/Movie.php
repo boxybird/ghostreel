@@ -23,7 +23,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $tagline
  * @property int|null $runtime
  * @property array<int, array{name: string, job: string, department: string}>|null $crew
- * @property array<int, int>|null $similar_tmdb_ids
  * @property Carbon|null $details_synced_at
  * @property string $source
  * @property Carbon $created_at
@@ -33,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, MovieCast> $castMembers
  * @property-read Collection<int, Person> $people
  * @property-read Collection<int, Genre> $genres
+ * @property-read Collection<int, Movie> $similarMovies
  */
 class Movie extends Model
 {
@@ -54,7 +54,6 @@ class Movie extends Model
         'tagline',
         'runtime',
         'crew',
-        'similar_tmdb_ids',
         'details_synced_at',
         'source',
     ];
@@ -71,7 +70,6 @@ class Movie extends Model
             'tmdb_popularity' => 'decimal:3',
             'runtime' => 'integer',
             'crew' => 'array',
-            'similar_tmdb_ids' => 'array',
             'details_synced_at' => 'datetime',
         ];
     }
@@ -130,17 +128,14 @@ class Movie extends Model
     }
 
     /**
-     * Get similar movies based on stored TMDB IDs.
+     * Get similar movies via self-referential many-to-many relationship.
      *
-     * @return Collection<int, Movie>
+     * @return BelongsToMany<Movie, $this>
      */
-    public function getSimilarMoviesAttribute(): Collection
+    public function similarMovies(): BelongsToMany
     {
-        if ($this->similar_tmdb_ids === null || $this->similar_tmdb_ids === []) {
-            return new Collection;
-        }
-
-        return self::whereIn('tmdb_id', $this->similar_tmdb_ids)->get();
+        return $this->belongsToMany(self::class, 'movie_similar', 'movie_id', 'similar_movie_id')
+            ->withTimestamps();
     }
 
     /**

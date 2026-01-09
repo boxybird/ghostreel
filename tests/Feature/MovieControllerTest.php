@@ -185,9 +185,11 @@ describe('MovieController', function (): void {
             ]);
 
             $movie = Movie::factory()->create([
-                'similar_tmdb_ids' => [$similarMovie->tmdb_id],
                 'details_synced_at' => now(),
             ]);
+
+            // Attach similar movie via the relationship
+            $movie->similarMovies()->attach($similarMovie);
 
             $this->mock(TmdbService::class, function ($mock) use ($movie, $similarMovie): void {
                 $mock->shouldReceive('getMovieDetails')

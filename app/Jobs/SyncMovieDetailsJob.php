@@ -57,10 +57,8 @@ class SyncMovieDetailsJob implements ShouldQueue
             return;
         }
 
-        // Extract similar movie TMDB IDs
-        $similarTmdbIds = collect($details['similar'])->pluck('id')->toArray();
-
-        // Persist similar movies to the database (basic info only)
+        // Persist similar movies to the database and collect their IDs for syncing
+        $similarMovieIds = [];
         foreach ($details['similar'] as $similarData) {
             $similarMovie = Movie::updateOrCreate(
                 ['tmdb_id' => $similarData['id']],
@@ -76,6 +74,7 @@ class SyncMovieDetailsJob implements ShouldQueue
                 ]
             );
 
+            $similarMovieIds[] = $similarMovie->id;
             $this->syncGenres($similarMovie, $similarData['genre_ids']);
         }
 
@@ -94,10 +93,12 @@ class SyncMovieDetailsJob implements ShouldQueue
             'tagline' => $details['tagline'] ?? null,
             'runtime' => $details['runtime'] ?? null,
             'crew' => $crew,
-            'similar_tmdb_ids' => $similarTmdbIds,
             'tmdb_popularity' => $popularity,
             'details_synced_at' => now(),
         ]);
+
+        // Sync similar movies via pivot table
+        $movie->similarMovies()->sync($similarMovieIds);
 
         // Sync genres via pivot table
         $this->syncGenres($movie, $genreIds);

@@ -67,20 +67,18 @@ class MovieController extends Controller
             }
         }
 
-        // Get similar movies
-        $similarMovies = [];
-        if ($movie->similar_tmdb_ids !== null && $movie->similar_tmdb_ids !== []) {
-            $similarMovies = $movie->similarMovies->map(function (Movie $m): array {
-                return [
-                    'id' => $m->tmdb_id,
-                    'title' => $m->title,
-                    'poster_path' => $m->poster_path,
-                    'poster_url' => TmdbService::posterUrl($m->poster_path),
-                    'db_id' => $m->id,
-                ];
-            })->all();
-        } elseif (! $movie->hasDetails()) {
-            // Fallback to TMDB API if details not yet synced
+        // Get similar movies from the relationship
+        $movie->load('similarMovies');
+        $similarMovies = $movie->similarMovies->map(fn (Movie $m): array => [
+            'id' => $m->tmdb_id,
+            'title' => $m->title,
+            'poster_path' => $m->poster_path,
+            'poster_url' => TmdbService::posterUrl($m->poster_path),
+            'db_id' => $m->id,
+        ])->all();
+
+        // Fallback to TMDB API if no similar movies and details not yet synced
+        if ($similarMovies === [] && ! $movie->hasDetails()) {
             $tmdbDetails = $tmdbDetails ?? $this->tmdbService->getMovieDetails($movie->tmdb_id);
             if ($tmdbDetails !== null && $tmdbDetails['similar'] !== []) {
                 $similarTmdbIds = collect($tmdbDetails['similar'])->pluck('id')->toArray();
