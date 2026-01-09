@@ -141,20 +141,15 @@
 
         {{-- Hover overlay with actions --}}
         <div class="absolute inset-0 bg-dark-bg/90 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3 p-4">
-            <button
-                type="button"
-                onclick="addMovieToGrid(this.closest('.search-result-card'));"
-                class="w-full px-4 py-2 bg-neon-cyan text-dark-bg rounded-lg font-medium hover:bg-neon-cyan/90 transition-colors text-sm"
-            >
-                Add to grid
-            </button>
             @if($dbId)
                 <a
                     href="{{ route('movies.show', $dbId) }}"
-                    class="w-full px-4 py-2 bg-dark-surface border border-white/10 text-text-primary rounded-lg font-medium hover:bg-white/10 transition-colors text-sm text-center"
+                    class="w-full px-4 py-2 bg-neon-cyan text-dark-bg rounded-lg font-medium hover:bg-neon-cyan/90 transition-colors text-sm text-center"
                 >
                     View details
                 </a>
+            @else
+                <p class="text-xs text-text-muted text-center italic">Details coming soon</p>
             @endif
         </div>
     </div>

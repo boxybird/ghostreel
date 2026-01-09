@@ -4,7 +4,6 @@ import htmx from 'htmx.org';
 // Feature modules - import to make functions available globally
 import './features/movie-click.js';
 import './features/search-dialog.js';
-import './features/movie-grid.js';
 
 // Make htmx available globally
 window.htmx = htmx;
