@@ -1,6 +1,7 @@
 {{-- Genre movies partial for HTMX genre filtering --}}
 
-{{-- OOB Swap: Update genre chips to show active state --}}
+@if($currentPage === 1)
+{{-- OOB Swap: Update genre chips to show active state (only on first page) --}}
 <div id="genre-chips" hx-swap-oob="true" class="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
     <button
         type="button"
@@ -26,7 +27,7 @@
     @endforeach
 </div>
 
-{{-- Genre Header - Full width above grid --}}
+{{-- Genre Header - Full width above grid (only on first page) --}}
 <div class="col-span-full mb-4 flex items-center justify-between">
     <div>
         <h2 class="text-xl font-bold text-text-primary">{{ $genreName }} Movies</h2>
@@ -45,6 +46,7 @@
         Clear filter
     </button>
 </div>
+@endif
 
 {{-- Movie Cards --}}
 @foreach($movies as $movie)
