@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LogClickRequest;
 use App\Models\MovieClick;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use Illuminate\Http\JsonResponse;
 
 class MovieClicksController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
     ) {}
 
     public function store(LogClickRequest $request): JsonResponse
@@ -28,7 +28,7 @@ class MovieClicksController extends Controller
         return response()->json([
             'success' => true,
             'click_id' => $click->id,
-            'recent_views' => $this->movieRepo->getRecentViews(),
+            'recent_views' => $this->movieService->getRecentViews(),
         ]);
     }
 }

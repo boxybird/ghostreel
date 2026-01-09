@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(MovieRepository::class);
+        $this->app->singleton(MovieService::class);
     }
 
     /**

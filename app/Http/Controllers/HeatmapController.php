@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class HeatmapController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
     ) {}
 
     /**
@@ -20,13 +20,13 @@ class HeatmapController extends Controller
     public function index(Request $request): View
     {
         // Ensure we have data (dispatches job if needed)
-        $this->movieRepo->ensureTrendingDataAvailable();
+        $this->movieService->ensureTrendingDataAvailable();
 
-        $paginator = $this->movieRepo->getTrendingMovies(page: 1);
+        $paginator = $this->movieService->getTrendingMovies(page: 1);
         $trendingMovies = $paginator->items();
 
         $tmdbIds = collect($trendingMovies)->pluck('tmdb_id')->toArray();
-        $clickCounts = $this->movieRepo->getClickCounts($tmdbIds);
+        $clickCounts = $this->movieService->getClickCounts($tmdbIds);
 
         $movies = collect($trendingMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
@@ -43,8 +43,8 @@ class HeatmapController extends Controller
             ];
         });
 
-        $recentViews = $this->movieRepo->getRecentViews();
-        $genres = $this->movieRepo->getAllGenres();
+        $recentViews = $this->movieService->getRecentViews();
+        $genres = $this->movieService->getAllGenres();
 
         return view('heatmap.index', [
             'movies' => $movies,

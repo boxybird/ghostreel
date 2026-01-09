@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use Illuminate\Http\JsonResponse;
 
 class GenresController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
     ) {}
 
     public function index(): JsonResponse
     {
-        $genres = $this->movieRepo->getAllGenres();
+        $genres = $this->movieService->getAllGenres();
 
         return response()->json([
             'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),

@@ -4,23 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\MovieClick;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\View\View;
 
 class MoviesController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
         private readonly TmdbService $tmdbService,
     ) {}
 
     public function show(Movie $movie): View
     {
         // Ensure movie details (cast, etc.) are available
-        $this->movieRepo->ensureMovieDetailsAvailable($movie);
+        $this->movieService->ensureMovieDetailsAvailable($movie);
 
-        $movie = $this->movieRepo->getMovieWithDetails($movie);
+        $movie = $this->movieService->getMovieWithDetails($movie);
 
         // Get extended details from TMDB API if needed
         $details = $this->tmdbService->getMovieDetails($movie->tmdb_id);
@@ -41,7 +41,7 @@ class MoviesController extends Controller
         // Get similar movies
         $similarMovies = collect($details['similar'] ?? [])->take(10)->map(fn (array $m): array => [
             'id' => $m['id'],
-            'db_id' => $this->movieRepo->getMovieByTmdbId($m['id'])?->id,
+            'db_id' => $this->movieService->getMovieByTmdbId($m['id'])?->id,
             'title' => $m['title'],
             'poster_path' => $m['poster_path'],
             'poster_url' => TmdbService::posterUrl($m['poster_path']),

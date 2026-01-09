@@ -16,7 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
-class MovieRepository
+class MovieService
 {
     private const ITEMS_PER_PAGE = 20;
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,18 +11,18 @@ use Illuminate\View\View;
 class TrendingMoviesController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
     ) {}
 
     public function index(Request $request): View
     {
         $page = (int) $request->input('page', 1);
 
-        $paginator = $this->movieRepo->getTrendingMovies(page: $page);
+        $paginator = $this->movieService->getTrendingMovies(page: $page);
         $trendingMovies = $paginator->items();
 
         $tmdbIds = collect($trendingMovies)->pluck('tmdb_id')->toArray();
-        $clickCounts = $this->movieRepo->getClickCounts($tmdbIds);
+        $clickCounts = $this->movieService->getClickCounts($tmdbIds);
 
         $movies = collect($trendingMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
@@ -42,7 +42,7 @@ class TrendingMoviesController extends Controller
         // Include genres for OOB swap when returning to page 1 (filter cleared)
         $genres = null;
         if ($page === 1) {
-            $genreModels = $this->movieRepo->getAllGenres();
+            $genreModels = $this->movieService->getAllGenres();
             $genres = $genreModels->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]);
         }
 

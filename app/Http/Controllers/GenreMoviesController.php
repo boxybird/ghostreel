@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Genre;
 use App\Models\Movie;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +12,7 @@ use Illuminate\View\View;
 class GenreMoviesController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
     ) {}
 
     public function index(Request $request, int $genreId): View
@@ -20,22 +20,22 @@ class GenreMoviesController extends Controller
         $page = (int) $request->input('page', 1);
 
         // Find genre by TMDB ID
-        $genre = $this->movieRepo->getGenreByTmdbId($genreId);
+        $genre = $this->movieService->getGenreByTmdbId($genreId);
 
         if (! $genre instanceof Genre) {
             abort(404, 'Genre not found');
         }
 
         // Ensure we have data (dispatches job if needed)
-        $this->movieRepo->ensureGenreDataAvailable($genre);
+        $this->movieService->ensureGenreDataAvailable($genre);
 
-        $paginator = $this->movieRepo->getMoviesByGenre($genre, $page);
+        $paginator = $this->movieService->getMoviesByGenre($genre, $page);
         $genreMovies = $paginator->items();
 
         $genreName = $genre->name;
 
         $tmdbIds = collect($genreMovies)->pluck('tmdb_id')->toArray();
-        $clickCounts = $this->movieRepo->getClickCounts($tmdbIds);
+        $clickCounts = $this->movieService->getClickCounts($tmdbIds);
 
         $moviesWithData = collect($genreMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
@@ -52,7 +52,7 @@ class GenreMoviesController extends Controller
             ];
         });
 
-        $genres = $this->movieRepo->getAllGenres();
+        $genres = $this->movieService->getAllGenres();
 
         return view('genre.movies', [
             'movies' => $moviesWithData,

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SearchRequest;
 use App\Models\Genre;
 use App\Models\Movie;
-use App\Services\MovieRepository;
+use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 class SearchController extends Controller
 {
     public function __construct(
-        private readonly MovieRepository $movieRepo,
+        private readonly MovieService $movieService,
         private readonly TmdbService $tmdbService,
     ) {}
 
@@ -27,7 +27,7 @@ class SearchController extends Controller
         $page = $request->validated('page', 1);
 
         // First, search local database
-        $localResults = $this->movieRepo->searchMovies($query, 20);
+        $localResults = $this->movieService->searchMovies($query, 20);
 
         // If local results are insufficient, fallback to TMDB API
         $tmdbResults = collect();
@@ -43,7 +43,7 @@ class SearchController extends Controller
 
         // Get database IDs for movies
         $tmdbIds = $movies->pluck('id')->toArray();
-        $dbIds = $this->movieRepo->getDbIds($tmdbIds);
+        $dbIds = $this->movieService->getDbIds($tmdbIds);
 
         // Transform for view
         $results = $movies->map(fn (array $movie): array => [
