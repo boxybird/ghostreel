@@ -192,8 +192,8 @@
                         @foreach($similarMovies as $similar)
                             <x-movie-card
                                 :movie="$similar"
-                                :clickable="true"
                                 variant="minimal"
+                                :show-ghost-action="false"
                             />
                         @endforeach
                     </div>

@@ -22,13 +22,11 @@
                 @foreach($movies as $index => $movie)
                     <x-movie-card
                         :movie="$movie"
-                        :clickable="true"
-                        :show-eye-icon="false"
-                        :show-heatmap-glow="false"
+                        :show-ghost-action="true"
+                        :show-heatmap-glow="true"
                         :show-click-badge="true"
-                        click-badge-label="click"
+                        click-badge-label="view"
                         :rank="$index + 1"
-                        :show-rating="false"
                     />
                 @endforeach
             </div>

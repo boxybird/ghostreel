@@ -26,25 +26,25 @@ test.describe('Movie Detail Page', () => {
     await expect(page.getByRole('heading', { level: 1, name: movieTitle })).toBeVisible();
   });
 
-  test('eye icon logs view without navigating', async ({ page }) => {
+  test('ghost icon logs view without navigating', async ({ page }) => {
     await page.goto('/');
 
     // Wait for movie cards to load
     const movieCards = page.locator('.movie-card');
     await expect(movieCards.first()).toBeVisible();
 
-    // Find the eye icon button on the first card
+    // Find the ghost icon button on the first card
     const firstCard = movieCards.first();
-    const eyeButton = firstCard.locator('button[title="Log view to heatmap"]');
-    await expect(eyeButton).toBeVisible();
+    const ghostButton = firstCard.locator('button[title="Add Ghost View"]');
+    await expect(ghostButton).toBeVisible();
 
     // Set up response listener for the click API
     const responsePromise = page.waitForResponse(response =>
       response.url().includes('/click') && response.status() === 200
     );
 
-    // Click the eye icon
-    await eyeButton.click();
+    // Click the ghost icon
+    await ghostButton.click();
 
     // Wait for API response
     await responsePromise;

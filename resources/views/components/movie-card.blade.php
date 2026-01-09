@@ -1,7 +1,7 @@
 @props([
     'movie',
     'clickable' => true,
-    'showEyeIcon' => false,
+    'showGhostAction' => false,
     'showHeatmapGlow' => false,
     'showClickBadge' => false,
     'clickBadgeLabel' => 'views',
@@ -89,17 +89,18 @@
         data-vote-average="{{ $voteAverage }}"
         @if($dbId) data-db-id="{{ $dbId }}" @endif
     >
-        {{-- Eye Icon Button --}}
-        @if($showEyeIcon)
+        {{-- Ghost Quick Action Button --}}
+        @if($showGhostAction)
             <button
                 type="button"
                 onclick="logMovieClickFromSearch(this.closest('.search-result-card'));"
-                class="absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-cyan hover:text-dark-bg hover:border-neon-cyan transition-all duration-200"
-                title="Log view to heatmap"
+                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost"
+                title="Add Ghost View"
             >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg class="w-4 h-4 transition-transform group-hover/ghost:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 10h.01"/>
+                    <path d="M15 10h.01"/>
+                    <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>
                 </svg>
             </button>
         @endif
@@ -198,17 +199,18 @@
             </div>
         @endif
 
-        {{-- Eye Icon Button --}}
-        @if($showEyeIcon)
+        {{-- Ghost Quick Action Button --}}
+        @if($showGhostAction)
             <button
                 type="button"
                 onclick="event.preventDefault(); event.stopPropagation(); logMovieClick(this.closest('.movie-card'));"
-                class="absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-cyan hover:text-dark-bg hover:border-neon-cyan transition-all duration-200"
-                title="Log view to heatmap"
+                class="ghost-action-btn absolute top-2 right-2 z-30 p-2 rounded-full bg-dark-bg/70 backdrop-blur-sm border border-white/10 text-text-muted hover:bg-neon-pink hover:text-white hover:border-neon-pink hover:shadow-[0_0_15px_rgba(255,0,135,0.5)] transition-all duration-300 group/ghost"
+                title="Add Ghost View"
             >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg class="w-4 h-4 transition-transform group-hover/ghost:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 10h.01"/>
+                    <path d="M15 10h.01"/>
+                    <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>
                 </svg>
             </button>
         @endif

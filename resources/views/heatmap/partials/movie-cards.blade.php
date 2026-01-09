@@ -32,7 +32,7 @@
     <x-movie-card
         :movie="$movie"
         :clickable="true"
-        :show-eye-icon="true"
+        :show-ghost-action="true"
         :show-heatmap-glow="true"
         :show-click-badge="true"
         click-badge-label="view"

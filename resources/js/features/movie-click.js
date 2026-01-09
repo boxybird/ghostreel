@@ -14,6 +14,15 @@ export async function logMovieClick(card) {
     const movieTitle = card.dataset.movieTitle;
     const posterPath = card.dataset.posterPath;
 
+    // Visual feedback on the ghost button
+    const ghostButton = card.querySelector('.ghost-action-btn');
+    if (ghostButton) {
+        ghostButton.classList.add('ghost-pulse-active');
+        setTimeout(() => {
+            ghostButton.classList.remove('ghost-pulse-active');
+        }, 800);
+    }
+
     try {
         const response = await fetch('/click', {
             method: 'POST',
@@ -48,13 +57,13 @@ export async function logMovieClickFromSearch(card) {
     const movieTitle = card.dataset.movieTitle;
     const posterPath = card.dataset.posterPath;
 
-    // Visual feedback on the eye button
-    const eyeButton = card.querySelector('button[title="Log view to heatmap"]');
-    if (eyeButton) {
-        eyeButton.classList.add('bg-neon-cyan', 'text-dark-bg');
+    // Visual feedback on the ghost button
+    const ghostButton = card.querySelector('.ghost-action-btn');
+    if (ghostButton) {
+        ghostButton.classList.add('ghost-pulse-active');
         setTimeout(() => {
-            eyeButton.classList.remove('bg-neon-cyan', 'text-dark-bg');
-        }, 1000);
+            ghostButton.classList.remove('ghost-pulse-active');
+        }, 800);
     }
 
     try {

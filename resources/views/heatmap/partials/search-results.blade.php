@@ -11,9 +11,9 @@
         @foreach($results as $movie)
             <x-movie-card
                 :movie="$movie"
-                :clickable="false"
-                :show-eye-icon="true"
                 variant="search"
+                :show-ghost-action="true"
+                :show-rating="true"
             />
         @endforeach
     </div>
