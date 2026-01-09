@@ -174,13 +174,13 @@ it('limits results to 20 items', function (): void {
     expect($results)->toHaveCount(20);
 });
 
-it('orders local results by vote average descending', function (): void {
-    Movie::factory()->create(['title' => 'Fight Low', 'vote_average' => 5.0, 'tmdb_id' => 1]);
-    Movie::factory()->create(['title' => 'Fight High', 'vote_average' => 9.0, 'tmdb_id' => 2]);
-    Movie::factory()->create(['title' => 'Fight Mid', 'vote_average' => 7.0, 'tmdb_id' => 3]);
+it('orders local results by TMDB popularity descending', function (): void {
+    Movie::factory()->create(['title' => 'Fight Low', 'tmdb_popularity' => 50.0, 'tmdb_id' => 1]);
+    Movie::factory()->create(['title' => 'Fight High', 'tmdb_popularity' => 900.0, 'tmdb_id' => 2]);
+    Movie::factory()->create(['title' => 'Fight Mid', 'tmdb_popularity' => 100.0, 'tmdb_id' => 3]);
 
     // Add more to reach threshold and avoid TMDB call
-    Movie::factory()->count(5)->create(['title' => 'Fight Extra', 'vote_average' => 6.0]);
+    Movie::factory()->count(5)->create(['title' => 'Fight Extra', 'tmdb_popularity' => 80.0]);
 
     $response = $this->get('/search?q=fight');
 

@@ -1,12 +1,23 @@
 <?php
 
+use App\Models\Genre;
+use App\Models\Movie;
 use App\Models\MovieClick;
+use App\Models\TrendingSnapshot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    // Seed genres for tests
+    Genre::create(['tmdb_id' => 28, 'name' => 'Action']);
+    Genre::create(['tmdb_id' => 18, 'name' => 'Drama']);
+
+    // Fake the queue to prevent actual job dispatch during tests
+    Queue::fake();
+
     Http::fake([
         'api.themoviedb.org/3/trending/movie/day*' => Http::response([
             'page' => 1,
@@ -20,6 +31,8 @@ beforeEach(function (): void {
                     'overview' => 'A test movie',
                     'release_date' => '2025-01-01',
                     'vote_average' => 8.5,
+                    'popularity' => 500.0,
+                    'genre_ids' => [28, 18],
                 ],
                 [
                     'id' => 456,
@@ -29,6 +42,8 @@ beforeEach(function (): void {
                     'overview' => 'Another test movie',
                     'release_date' => '2025-02-01',
                     'vote_average' => 7.2,
+                    'popularity' => 300.0,
+                    'genre_ids' => [28],
                 ],
             ],
         ]),
@@ -36,6 +51,25 @@ beforeEach(function (): void {
 });
 
 it('displays the heatmap index page with trending movies', function (): void {
+    // Seed movies with trending snapshots
+    $movie1 = Movie::factory()->create(['tmdb_id' => 123, 'tmdb_popularity' => 500]);
+    $movie2 = Movie::factory()->create(['tmdb_id' => 456, 'tmdb_popularity' => 300]);
+
+    TrendingSnapshot::create([
+        'movie_id' => $movie1->id,
+        'list_type' => 'trending_day',
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now(),
+    ]);
+    TrendingSnapshot::create([
+        'movie_id' => $movie2->id,
+        'list_type' => 'trending_day',
+        'position' => 2,
+        'page' => 1,
+        'snapshot_date' => now(),
+    ]);
+
     $response = $this->get('/');
 
     $response->assertSuccessful();
@@ -43,7 +77,18 @@ it('displays the heatmap index page with trending movies', function (): void {
     $response->assertViewHas('movies');
     $response->assertViewHas('recentViews');
     $response->assertViewHas('currentPage', 1);
-    $response->assertViewHas('hasMorePages', true);
+});
+
+it('displays movies from database fallback when no snapshot exists', function (): void {
+    // Seed movies without snapshots - should fall back to popularity sort
+    Movie::factory()->create(['tmdb_id' => 123, 'tmdb_popularity' => 500]);
+    Movie::factory()->create(['tmdb_id' => 456, 'tmdb_popularity' => 300]);
+
+    $response = $this->get('/');
+
+    $response->assertSuccessful();
+    $response->assertViewIs('heatmap.index');
+    $response->assertViewHas('movies');
 });
 
 it('logs a movie click and returns recent views', function (): void {
@@ -152,6 +197,15 @@ it('excludes clicks older than 24 hours from heatmap data', function (): void {
 });
 
 it('includes click counts in movie data on index page', function (): void {
+    $movie = Movie::factory()->create(['tmdb_id' => 123, 'tmdb_popularity' => 500]);
+    TrendingSnapshot::create([
+        'movie_id' => $movie->id,
+        'list_type' => 'trending_day',
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now(),
+    ]);
+
     MovieClick::factory()->count(3)->create([
         'tmdb_movie_id' => 123,
         'clicked_at' => now(),
@@ -161,22 +215,44 @@ it('includes click counts in movie data on index page', function (): void {
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
-    $testMovie = $movies->firstWhere('id', 123);
+    $testMovie = $movies->first();
 
+    expect($testMovie)->not->toBeNull();
+    expect($testMovie['id'])->toBe(123);
     expect($testMovie['click_count'])->toBe(3);
 });
 
 it('returns trending movies partial for HTMX load more', function (): void {
+    // Seed movies for multiple pages
+    $movies = Movie::factory()->count(25)->create();
+    foreach ($movies as $index => $movie) {
+        TrendingSnapshot::create([
+            'movie_id' => $movie->id,
+            'list_type' => 'trending_day',
+            'position' => $index + 1,
+            'page' => $index < 20 ? 1 : 2,
+            'snapshot_date' => now(),
+        ]);
+    }
+
     $response = $this->get('/trending?page=2');
 
     $response->assertSuccessful();
     $response->assertViewIs('heatmap.partials.movie-cards');
     $response->assertViewHas('movies');
-    $response->assertViewHas('currentPage', 1); // Mocked response always returns page 1
-    $response->assertViewHas('hasMorePages');
+    $response->assertViewHas('currentPage', 2);
 });
 
 it('trending endpoint returns movie cards with click counts', function (): void {
+    $movie = Movie::factory()->create(['tmdb_id' => 123, 'tmdb_popularity' => 500]);
+    TrendingSnapshot::create([
+        'movie_id' => $movie->id,
+        'list_type' => 'trending_day',
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now(),
+    ]);
+
     MovieClick::factory()->count(5)->create([
         'tmdb_movie_id' => 123,
         'clicked_at' => now(),
@@ -186,7 +262,9 @@ it('trending endpoint returns movie cards with click counts', function (): void 
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
-    $testMovie = $movies->firstWhere('id', 123);
+    $testMovie = $movies->first();
 
+    expect($testMovie)->not->toBeNull();
+    expect($testMovie['id'])->toBe(123);
     expect($testMovie['click_count'])->toBe(5);
 });

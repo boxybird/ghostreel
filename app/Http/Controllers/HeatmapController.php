@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LogClickRequest;
 use App\Models\Movie;
 use App\Models\MovieClick;
+use App\Services\MovieRepository;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,7 @@ use Illuminate\Support\Collection;
 class HeatmapController extends Controller
 {
     public function __construct(
-        private readonly TmdbService $tmdbService,
+        private readonly MovieRepository $movieRepo,
     ) {}
 
     /**
@@ -22,36 +23,40 @@ class HeatmapController extends Controller
      */
     public function index(Request $request): View
     {
-        $trendingData = $this->tmdbService->getTrendingMovies(page: 1);
-        $trendingMovies = $trendingData['movies'];
+        // Ensure we have data (dispatches job if needed)
+        $this->movieRepo->ensureTrendingDataAvailable();
 
-        // Auto-seed trending movies to local database
-        $this->seedMoviesToDatabase($trendingMovies, 'trending');
+        $paginator = $this->movieRepo->getTrendingMovies(page: 1);
+        $trendingMovies = $paginator->items();
 
-        $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
+        $tmdbIds = collect($trendingMovies)->pluck('tmdb_id')->toArray();
+        $clickCounts = $this->getClickCounts($tmdbIds);
 
-        // Get database IDs for movies
-        $dbIds = $this->getDbIds($trendingMovies->pluck('id')->toArray());
-
-        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts, $dbIds): array {
+        $movies = collect($trendingMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
-                ...$movie,
-                'db_id' => $dbIds[$movie['id']] ?? null,
-                'poster_url' => TmdbService::posterUrl($movie['poster_path']),
-                'click_count' => $clickCounts[$movie['id']] ?? 0,
+                'id' => $movie->tmdb_id,
+                'db_id' => $movie->id,
+                'title' => $movie->title,
+                'poster_path' => $movie->poster_path,
+                'backdrop_path' => $movie->backdrop_path,
+                'overview' => $movie->overview ?? '',
+                'release_date' => $movie->release_date?->format('Y-m-d') ?? '',
+                'vote_average' => (float) $movie->vote_average,
+                'poster_url' => TmdbService::posterUrl($movie->poster_path),
+                'click_count' => $clickCounts[$movie->tmdb_id] ?? 0,
             ];
         });
 
         $recentViews = $this->getRecentViews();
-        $genres = $this->tmdbService->getGenres();
+        $genres = $this->movieRepo->getAllGenres();
 
         return view('heatmap.index', [
             'movies' => $movies,
             'recentViews' => $recentViews,
-            'genres' => $genres,
-            'currentPage' => $trendingData['page'],
-            'totalPages' => $trendingData['total_pages'],
-            'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],
+            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'hasMorePages' => $paginator->hasMorePages(),
         ]);
     }
 
@@ -61,35 +66,41 @@ class HeatmapController extends Controller
     public function trending(Request $request): View
     {
         $page = (int) $request->input('page', 1);
-        $trendingData = $this->tmdbService->getTrendingMovies(page: $page);
-        $trendingMovies = $trendingData['movies'];
 
-        // Auto-seed trending movies to local database
-        $this->seedMoviesToDatabase($trendingMovies, 'trending');
+        $paginator = $this->movieRepo->getTrendingMovies(page: $page);
+        $trendingMovies = $paginator->items();
 
-        $clickCounts = $this->getClickCounts($trendingMovies->pluck('id')->toArray());
+        $tmdbIds = collect($trendingMovies)->pluck('tmdb_id')->toArray();
+        $clickCounts = $this->getClickCounts($tmdbIds);
 
-        // Get database IDs for movies
-        $dbIds = $this->getDbIds($trendingMovies->pluck('id')->toArray());
-
-        $movies = $trendingMovies->map(function (array $movie) use ($clickCounts, $dbIds): array {
+        $movies = collect($trendingMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
-                ...$movie,
-                'db_id' => $dbIds[$movie['id']] ?? null,
-                'poster_url' => TmdbService::posterUrl($movie['poster_path']),
-                'click_count' => $clickCounts[$movie['id']] ?? 0,
+                'id' => $movie->tmdb_id,
+                'db_id' => $movie->id,
+                'title' => $movie->title,
+                'poster_path' => $movie->poster_path,
+                'backdrop_path' => $movie->backdrop_path,
+                'overview' => $movie->overview ?? '',
+                'release_date' => $movie->release_date?->format('Y-m-d') ?? '',
+                'vote_average' => (float) $movie->vote_average,
+                'poster_url' => TmdbService::posterUrl($movie->poster_path),
+                'click_count' => $clickCounts[$movie->tmdb_id] ?? 0,
             ];
         });
 
         // Include genres for OOB swap when returning to page 1 (filter cleared)
-        $genres = $page === 1 ? $this->tmdbService->getGenres() : null;
+        $genres = null;
+        if ($page === 1) {
+            $genreModels = $this->movieRepo->getAllGenres();
+            $genres = $genreModels->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]);
+        }
 
         return view('heatmap.partials.movie-cards', [
             'movies' => $movies,
             'genres' => $genres,
-            'currentPage' => $trendingData['page'],
-            'totalPages' => $trendingData['total_pages'],
-            'hasMorePages' => $trendingData['page'] < $trendingData['total_pages'],
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => $paginator->lastPage(),
+            'hasMorePages' => $paginator->hasMorePages(),
         ]);
     }
 
@@ -163,24 +174,6 @@ class HeatmapController extends Controller
     }
 
     /**
-     * Get database IDs for given TMDB movie IDs.
-     *
-     * @param  array<int>  $tmdbIds
-     * @return array<int, int>
-     */
-    private function getDbIds(array $tmdbIds): array
-    {
-        if ($tmdbIds === []) {
-            return [];
-        }
-
-        return Movie::query()
-            ->whereIn('tmdb_id', $tmdbIds)
-            ->pluck('id', 'tmdb_id')
-            ->toArray();
-    }
-
-    /**
      * Get the most recent movie views for the sidebar.
      *
      * @return Collection<int, array{id: int, tmdb_movie_id: int, movie_title: string, poster_url: ?string, clicked_at: string}>
@@ -199,28 +192,5 @@ class HeatmapController extends Controller
                 'poster_url' => TmdbService::posterUrl($click->poster_path, 'w185'),
                 'clicked_at' => $click->clicked_at->diffForHumans(),
             ]);
-    }
-
-    /**
-     * Seed movies from TMDB response to local database.
-     *
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>  $movies
-     */
-    private function seedMoviesToDatabase(Collection $movies, string $source): void
-    {
-        foreach ($movies as $movie) {
-            Movie::updateOrCreate(
-                ['tmdb_id' => $movie['id']],
-                [
-                    'title' => $movie['title'],
-                    'poster_path' => $movie['poster_path'],
-                    'backdrop_path' => $movie['backdrop_path'],
-                    'overview' => $movie['overview'],
-                    'release_date' => $movie['release_date'] ?: null,
-                    'vote_average' => $movie['vote_average'],
-                    'source' => $source,
-                ]
-            );
-        }
     }
 }

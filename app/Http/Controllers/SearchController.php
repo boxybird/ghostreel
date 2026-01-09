@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SearchRequest;
 use App\Models\Movie;
+use App\Services\MovieRepository;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -11,6 +12,7 @@ use Illuminate\Support\Collection;
 class SearchController extends Controller
 {
     public function __construct(
+        private readonly MovieRepository $movieRepo,
         private readonly TmdbService $tmdbService,
     ) {}
 
@@ -24,11 +26,7 @@ class SearchController extends Controller
         $page = $request->validated('page', 1);
 
         // First, search local database
-        $localResults = Movie::query()
-            ->search($query)
-            ->orderByDesc('vote_average')
-            ->limit(20)
-            ->get();
+        $localResults = $this->movieRepo->searchMovies($query, 20);
 
         // If local results are insufficient, fallback to TMDB API
         $tmdbResults = collect();
@@ -44,7 +42,7 @@ class SearchController extends Controller
 
         // Get database IDs for movies
         $tmdbIds = $movies->pluck('id')->toArray();
-        $dbIds = $this->getDbIds($tmdbIds);
+        $dbIds = $this->movieRepo->getDbIds($tmdbIds);
 
         // Transform for view
         $results = $movies->map(fn (array $movie): array => [
@@ -62,27 +60,9 @@ class SearchController extends Controller
     }
 
     /**
-     * Get database IDs for given TMDB movie IDs.
-     *
-     * @param  array<int>  $tmdbIds
-     * @return array<int, int>
-     */
-    private function getDbIds(array $tmdbIds): array
-    {
-        if ($tmdbIds === []) {
-            return [];
-        }
-
-        return Movie::query()
-            ->whereIn('tmdb_id', $tmdbIds)
-            ->pluck('id', 'tmdb_id')
-            ->toArray();
-    }
-
-    /**
      * Seed movies from TMDB response to local database.
      *
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>  $movies
+     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>  $movies
      */
     private function seedMoviesToDatabase(Collection $movies): void
     {
@@ -96,6 +76,8 @@ class SearchController extends Controller
                     'overview' => $movie['overview'],
                     'release_date' => $movie['release_date'] ?: null,
                     'vote_average' => $movie['vote_average'],
+                    'tmdb_popularity' => $movie['popularity'],
+                    'genre_ids' => $movie['genre_ids'],
                     'source' => 'search',
                 ]
             );
@@ -106,7 +88,7 @@ class SearchController extends Controller
      * Merge local and TMDB results, deduping by tmdb_id.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Movie>  $localResults
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>  $tmdbResults
+     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>  $tmdbResults
      * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>
      */
     private function mergeResults(\Illuminate\Database\Eloquent\Collection $localResults, Collection $tmdbResults): Collection

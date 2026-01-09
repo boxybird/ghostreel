@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Movie;
 use App\Models\MovieClick;
+use App\Services\MovieRepository;
 use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class GenreController extends Controller
 {
     public function __construct(
-        private readonly TmdbService $tmdbService,
+        private readonly MovieRepository $movieRepo,
     ) {}
 
     /**
@@ -21,10 +21,10 @@ class GenreController extends Controller
      */
     public function index(): JsonResponse
     {
-        $genres = $this->tmdbService->getGenres();
+        $genres = $this->movieRepo->getAllGenres();
 
         return response()->json([
-            'genres' => $genres,
+            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
         ]);
     }
 
@@ -34,37 +34,45 @@ class GenreController extends Controller
     public function show(Request $request, int $genreId): View
     {
         $page = (int) $request->input('page', 1);
-        $genreData = $this->tmdbService->discoverMoviesByGenre($genreId, $page);
-        $movies = $genreData['movies'];
 
-        // Find genre name from cached genres
-        $genres = $this->tmdbService->getGenres();
-        $genre = $genres->firstWhere('id', $genreId);
-        $genreName = $genre['name'] ?? 'Unknown';
+        // Ensure we have data (dispatches job if needed)
+        $this->movieRepo->ensureGenreDataAvailable($genreId);
 
-        // Auto-seed genre movies to local database (use 'search' source for genre discovery)
-        $this->seedMoviesToDatabase($movies, 'search');
+        $paginator = $this->movieRepo->getMoviesByGenre($genreId, $page);
+        $genreMovies = $paginator->items();
 
-        $clickCounts = $this->getClickCounts($movies->pluck('id')->toArray());
-        $dbIds = $this->getDbIds($movies->pluck('id')->toArray());
+        // Find genre name from DB
+        $genre = $this->movieRepo->getGenreByTmdbId($genreId);
+        $genreName = $genre instanceof \App\Models\Genre ? $genre->name : 'Unknown';
 
-        $moviesWithData = $movies->map(function (array $movie) use ($clickCounts, $dbIds): array {
+        $tmdbIds = collect($genreMovies)->pluck('tmdb_id')->toArray();
+        $clickCounts = $this->getClickCounts($tmdbIds);
+
+        $moviesWithData = collect($genreMovies)->map(function (Movie $movie) use ($clickCounts): array {
             return [
-                ...$movie,
-                'db_id' => $dbIds[$movie['id']] ?? null,
-                'poster_url' => TmdbService::posterUrl($movie['poster_path']),
-                'click_count' => $clickCounts[$movie['id']] ?? 0,
+                'id' => $movie->tmdb_id,
+                'db_id' => $movie->id,
+                'title' => $movie->title,
+                'poster_path' => $movie->poster_path,
+                'backdrop_path' => $movie->backdrop_path,
+                'overview' => $movie->overview ?? '',
+                'release_date' => $movie->release_date?->format('Y-m-d') ?? '',
+                'vote_average' => (float) $movie->vote_average,
+                'poster_url' => TmdbService::posterUrl($movie->poster_path),
+                'click_count' => $clickCounts[$movie->tmdb_id] ?? 0,
             ];
         });
 
+        $genres = $this->movieRepo->getAllGenres();
+
         return view('genre.movies', [
             'movies' => $moviesWithData,
-            'genres' => $genres,
+            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
             'genreId' => $genreId,
             'genreName' => $genreName,
-            'currentPage' => $genreData['page'],
-            'totalPages' => min($genreData['total_pages'], 500), // TMDB limits to 500 pages
-            'hasMorePages' => $genreData['page'] < min($genreData['total_pages'], 500),
+            'currentPage' => $paginator->currentPage(),
+            'totalPages' => min($paginator->lastPage(), 500), // TMDB limits to 500 pages
+            'hasMorePages' => $paginator->hasMorePages() && $paginator->currentPage() < 500,
         ]);
     }
 
@@ -87,46 +95,5 @@ class GenreController extends Controller
             ->groupBy('tmdb_movie_id')
             ->pluck('click_count', 'tmdb_movie_id')
             ->toArray();
-    }
-
-    /**
-     * Get database IDs for given TMDB movie IDs.
-     *
-     * @param  array<int>  $tmdbIds
-     * @return array<int, int>
-     */
-    private function getDbIds(array $tmdbIds): array
-    {
-        if ($tmdbIds === []) {
-            return [];
-        }
-
-        return Movie::query()
-            ->whereIn('tmdb_id', $tmdbIds)
-            ->pluck('id', 'tmdb_id')
-            ->toArray();
-    }
-
-    /**
-     * Seed movies from TMDB response to local database.
-     *
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>  $movies
-     */
-    private function seedMoviesToDatabase(Collection $movies, string $source): void
-    {
-        foreach ($movies as $movie) {
-            Movie::updateOrCreate(
-                ['tmdb_id' => $movie['id']],
-                [
-                    'title' => $movie['title'],
-                    'poster_path' => $movie['poster_path'],
-                    'backdrop_path' => $movie['backdrop_path'],
-                    'overview' => $movie['overview'],
-                    'release_date' => $movie['release_date'] ?: null,
-                    'vote_average' => $movie['vote_average'],
-                    'source' => $source,
-                ]
-            );
-        }
     }
 }

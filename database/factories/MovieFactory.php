@@ -24,6 +24,7 @@ class MovieFactory extends Factory
             'overview' => fake()->paragraph(),
             'release_date' => fake()->dateTimeBetween('-30 years', 'now'),
             'vote_average' => fake()->randomFloat(1, 0, 10),
+            'tmdb_popularity' => fake()->randomFloat(3, 0, 1000),
             'source' => fake()->randomElement(['trending', 'search']),
         ];
     }

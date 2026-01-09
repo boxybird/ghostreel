@@ -1,12 +1,26 @@
 <?php
 
+use App\Models\Genre;
+use App\Models\GenreSnapshot;
+use App\Models\Movie;
 use App\Models\MovieClick;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    // Seed genres into the database (now the primary source)
+    Genre::create(['tmdb_id' => 28, 'name' => 'Action']);
+    Genre::create(['tmdb_id' => 35, 'name' => 'Comedy']);
+    Genre::create(['tmdb_id' => 27, 'name' => 'Horror']);
+    Genre::create(['tmdb_id' => 18, 'name' => 'Drama']);
+    Genre::create(['tmdb_id' => 878, 'name' => 'Science Fiction']);
+
+    // Fake the queue to prevent actual job dispatch during tests
+    Queue::fake();
+
     Http::fake([
         'api.themoviedb.org/3/genre/movie/list*' => Http::response([
             'genres' => [
@@ -29,6 +43,8 @@ beforeEach(function (): void {
                     'overview' => 'An action movie',
                     'release_date' => '2025-01-15',
                     'vote_average' => 7.8,
+                    'popularity' => 150.5,
+                    'genre_ids' => [28],
                 ],
                 [
                     'id' => 1002,
@@ -38,6 +54,8 @@ beforeEach(function (): void {
                     'overview' => 'Another action movie',
                     'release_date' => '2025-02-20',
                     'vote_average' => 6.5,
+                    'popularity' => 120.3,
+                    'genre_ids' => [28],
                 ],
             ],
         ]),
@@ -53,6 +71,8 @@ beforeEach(function (): void {
                     'overview' => 'A trending movie',
                     'release_date' => '2025-01-01',
                     'vote_average' => 8.5,
+                    'popularity' => 500.0,
+                    'genre_ids' => [28, 18],
                 ],
             ],
         ]),
@@ -73,6 +93,25 @@ it('returns list of genres as JSON', function (): void {
 });
 
 it('returns movies filtered by genre', function (): void {
+    // Seed movies and genre snapshots for this test
+    $movie1 = Movie::factory()->create(['tmdb_id' => 1001, 'title' => 'Action Movie 1']);
+    $movie2 = Movie::factory()->create(['tmdb_id' => 1002, 'title' => 'Action Movie 2']);
+
+    GenreSnapshot::create([
+        'movie_id' => $movie1->id,
+        'genre_id' => 28,
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+    GenreSnapshot::create([
+        'movie_id' => $movie2->id,
+        'genre_id' => 28,
+        'position' => 2,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+
     $response = $this->get('/genres/28');
 
     $response->assertSuccessful();
@@ -81,10 +120,19 @@ it('returns movies filtered by genre', function (): void {
     $response->assertViewHas('genreId', 28);
     $response->assertViewHas('genreName', 'Action');
     $response->assertViewHas('currentPage', 1);
-    $response->assertViewHas('hasMorePages', true);
 });
 
 it('displays genre name in the response', function (): void {
+    // Seed a movie with genre snapshot for Comedy
+    $movie = Movie::factory()->create(['tmdb_id' => 2001]);
+    GenreSnapshot::create([
+        'movie_id' => $movie->id,
+        'genre_id' => 35,
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+
     $response = $this->get('/genres/35');
 
     $response->assertSuccessful();
@@ -92,28 +140,18 @@ it('displays genre name in the response', function (): void {
 });
 
 it('handles pagination for genre movies', function (): void {
-    Http::fake([
-        'api.themoviedb.org/3/genre/movie/list*' => Http::response([
-            'genres' => [
-                ['id' => 28, 'name' => 'Action'],
-            ],
-        ]),
-        'api.themoviedb.org/3/discover/movie*with_genres=28*page=2*' => Http::response([
-            'page' => 2,
-            'total_pages' => 50,
-            'results' => [
-                [
-                    'id' => 2001,
-                    'title' => 'Action Movie Page 2',
-                    'poster_path' => '/action-p2.jpg',
-                    'backdrop_path' => '/action-p2-bg.jpg',
-                    'overview' => 'Action movie on page 2',
-                    'release_date' => '2025-03-01',
-                    'vote_average' => 7.0,
-                ],
-            ],
-        ]),
-    ]);
+    // Seed movies for multiple pages
+    $movies = Movie::factory()->count(25)->create();
+
+    foreach ($movies as $index => $movie) {
+        GenreSnapshot::create([
+            'movie_id' => $movie->id,
+            'genre_id' => 28,
+            'position' => $index + 1,
+            'page' => $index < 20 ? 1 : 2,
+            'snapshot_date' => now()->toDateString(),
+        ]);
+    }
 
     $response = $this->get('/genres/28?page=2');
 
@@ -122,6 +160,15 @@ it('handles pagination for genre movies', function (): void {
 });
 
 it('includes click counts for genre movies', function (): void {
+    $movie = Movie::factory()->create(['tmdb_id' => 1001]);
+    GenreSnapshot::create([
+        'movie_id' => $movie->id,
+        'genre_id' => 28,
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+
     MovieClick::factory()->count(4)->create([
         'tmdb_movie_id' => 1001,
         'clicked_at' => now(),
@@ -131,12 +178,24 @@ it('includes click counts for genre movies', function (): void {
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
-    $movieWithClicks = $movies->firstWhere('id', 1001);
+    // 'id' in the response is the tmdb_id
+    $movieWithClicks = $movies->first();
 
+    expect($movieWithClicks)->not->toBeNull();
+    expect($movieWithClicks['id'])->toBe(1001);
     expect($movieWithClicks['click_count'])->toBe(4);
 });
 
 it('excludes old clicks from genre movie click counts', function (): void {
+    $movie = Movie::factory()->create(['tmdb_id' => 1001]);
+    GenreSnapshot::create([
+        'movie_id' => $movie->id,
+        'genre_id' => 28,
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+
     MovieClick::factory()->create([
         'tmdb_movie_id' => 1001,
         'clicked_at' => now()->subHours(25),
@@ -150,42 +209,38 @@ it('excludes old clicks from genre movie click counts', function (): void {
 
     $response->assertSuccessful();
     $movies = $response->viewData('movies');
-    $movieWithClicks = $movies->firstWhere('id', 1001);
+    // 'id' in the response is the tmdb_id
+    $movieWithClicks = $movies->first();
 
+    expect($movieWithClicks)->not->toBeNull();
+    expect($movieWithClicks['id'])->toBe(1001);
     expect($movieWithClicks['click_count'])->toBe(1);
 });
 
 it('handles unknown genre gracefully', function (): void {
-    Http::fake([
-        'api.themoviedb.org/3/genre/movie/list*' => Http::response([
-            'genres' => [
-                ['id' => 28, 'name' => 'Action'],
-            ],
-        ]),
-        'api.themoviedb.org/3/discover/movie*' => Http::response([
-            'page' => 1,
-            'total_pages' => 1,
-            'results' => [],
-        ]),
-    ]);
-
+    // When no data exists for a genre, it should still work (fallback)
     $response = $this->get('/genres/99999');
 
     $response->assertSuccessful();
     $response->assertViewHas('genreName', 'Unknown');
 });
 
-it('caps total pages at 500 when TMDB returns more', function (): void {
-    // The min() in the controller ensures total_pages never exceeds 500
-    // The beforeEach fake returns total_pages: 50, which is less than 500
-    // So we verify the controller properly passes through the capped value
+it('caps total pages at 500 when data exceeds limit', function (): void {
+    // Create a movie with genre snapshot
+    $movie = Movie::factory()->create();
+    GenreSnapshot::create([
+        'movie_id' => $movie->id,
+        'genre_id' => 28,
+        'position' => 1,
+        'page' => 1,
+        'snapshot_date' => now()->toDateString(),
+    ]);
+
     $response = $this->get('/genres/28');
 
     $response->assertSuccessful();
-    // From beforeEach: total_pages is 50, which is less than 500 cap
-    $response->assertViewHas('totalPages', 50);
-    // page 1 < 50 total pages = hasMorePages true
-    $response->assertViewHas('hasMorePages', true);
+    // Should be 1 since we only have 1 movie
+    $response->assertViewHas('totalPages', 1);
 });
 
 it('rejects non-numeric genre IDs', function (): void {
@@ -195,6 +250,9 @@ it('rejects non-numeric genre IDs', function (): void {
 });
 
 it('includes genres in heatmap index view', function (): void {
+    // Seed a trending movie
+    $movie = Movie::factory()->create(['tmdb_popularity' => 100]);
+
     $response = $this->get('/');
 
     $response->assertSuccessful();

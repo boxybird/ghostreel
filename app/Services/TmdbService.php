@@ -26,7 +26,7 @@ class TmdbService
     /**
      * Get trending movies for today.
      *
-     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>, page: int, total_pages: int}
+     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>, page: int, total_pages: int}
      */
     public function getTrendingMovies(int $page = 1): array
     {
@@ -60,7 +60,7 @@ class TmdbService
     /**
      * Search movies by query string.
      *
-     * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>
+     * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>
      */
     public function searchMovies(string $query, int $page = 1): Collection
     {
@@ -116,7 +116,7 @@ class TmdbService
     /**
      * Discover movies by genre.
      *
-     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>, page: int, total_pages: int}
+     * @return array{movies: Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>, page: int, total_pages: int}
      */
     public function discoverMoviesByGenre(int $genreId, int $page = 1): array
     {
@@ -153,7 +153,7 @@ class TmdbService
     /**
      * Get details for a specific movie with extended information.
      *
-     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>}|null
+     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}>, crew: array<int, array{name: string, job: string, department: string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>}|null
      */
     public function getMovieDetails(int $movieId): ?array
     {
@@ -180,7 +180,7 @@ class TmdbService
      * Transform raw TMDB movie details response to our extended application format.
      *
      * @param  array<string, mixed>  $movie
-     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>}
+     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, runtime: ?int, tagline: ?string, genres: array<int, array{id: int, name: string}>, cast: array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}>, crew: array<int, array{name: string, job: string, department: string}>, similar: array<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>}
      */
     private function transformMovieDetails(array $movie): array
     {
@@ -199,14 +199,31 @@ class TmdbService
         /** @var array<int, array<string, mixed>> $rawSimilar */
         $rawSimilar = $similar['results'] ?? [];
 
+        /** @var array<int, array<string, mixed>> $rawCrew */
+        $rawCrew = $credits['crew'] ?? [];
+
         // Transform cast - limit to top 10
         $cast = collect($rawCast)
             ->take(10)
-            ->map(fn (array $person): array => [
+            ->map(fn (array $person, int $index): array => [
                 'id' => $person['id'],
                 'name' => $person['name'],
                 'character' => $person['character'] ?? '',
                 'profile_path' => $person['profile_path'] ?? null,
+                'order' => $person['order'] ?? $index,
+            ])
+            ->values()
+            ->all();
+
+        // Transform crew - limit to key roles (Director, Writer, Producer)
+        $keyRoles = ['Director', 'Writer', 'Screenplay', 'Producer', 'Executive Producer'];
+        $crew = collect($rawCrew)
+            ->filter(fn (array $person): bool => isset($person['job']) && in_array($person['job'], $keyRoles, true))
+            ->take(10)
+            ->map(fn (array $person): array => [
+                'name' => $person['name'],
+                'job' => $person['job'],
+                'department' => $person['department'] ?? '',
             ])
             ->values()
             ->all();
@@ -226,10 +243,12 @@ class TmdbService
             'overview' => $movie['overview'] ?? '',
             'release_date' => $movie['release_date'] ?? '',
             'vote_average' => (float) ($movie['vote_average'] ?? 0),
+            'popularity' => (float) ($movie['popularity'] ?? 0),
             'runtime' => $movie['runtime'] ?? null,
             'tagline' => $movie['tagline'] ?? null,
             'genres' => $genres,
             'cast' => $cast,
+            'crew' => $crew,
             'similar' => $similarMovies,
         ];
     }
@@ -274,10 +293,13 @@ class TmdbService
      * Transform raw TMDB movie data to our application format.
      *
      * @param  array<string, mixed>  $movie
-     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}
+     * @return array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}
      */
     private function transformMovie(array $movie): array
     {
+        /** @var array<int, int> $genreIds */
+        $genreIds = $movie['genre_ids'] ?? [];
+
         return [
             'id' => $movie['id'],
             'title' => $movie['title'],
@@ -286,6 +308,8 @@ class TmdbService
             'overview' => $movie['overview'] ?? '',
             'release_date' => $movie['release_date'] ?? '',
             'vote_average' => (float) ($movie['vote_average'] ?? 0),
+            'popularity' => (float) ($movie['popularity'] ?? 0),
+            'genre_ids' => $genreIds,
         ];
     }
 

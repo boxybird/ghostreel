@@ -22,6 +22,8 @@ it('fetches trending movies from TMDB API', function (): void {
                     'overview' => 'A test movie overview',
                     'release_date' => '2025-01-01',
                     'vote_average' => 8.5,
+                    'popularity' => 150.5,
+                    'genre_ids' => [28, 12],
                 ],
             ],
         ]),
@@ -42,6 +44,8 @@ it('fetches trending movies from TMDB API', function (): void {
         'overview' => 'A test movie overview',
         'release_date' => '2025-01-01',
         'vote_average' => 8.5,
+        'popularity' => 150.5,
+        'genre_ids' => [28, 12],
     ]);
 });
 
@@ -68,6 +72,7 @@ it('fetches movie details by ID with credits and similar movies', function (): v
             'overview' => 'Specific overview',
             'release_date' => '2025-06-15',
             'vote_average' => 7.2,
+            'popularity' => 85.3,
             'runtime' => 120,
             'tagline' => 'A great tagline',
             'genres' => [
@@ -76,13 +81,14 @@ it('fetches movie details by ID with credits and similar movies', function (): v
             ],
             'credits' => [
                 'cast' => [
-                    ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg'],
-                    ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null],
+                    ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg', 'order' => 0],
+                    ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null, 'order' => 1],
                 ],
+                'crew' => [],
             ],
             'similar' => [
                 'results' => [
-                    ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5],
+                    ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5, 'popularity' => 45.2, 'genre_ids' => [28]],
                 ],
             ],
         ]),
@@ -99,6 +105,7 @@ it('fetches movie details by ID with credits and similar movies', function (): v
         'overview' => 'Specific overview',
         'release_date' => '2025-06-15',
         'vote_average' => 7.2,
+        'popularity' => 85.3,
         'runtime' => 120,
         'tagline' => 'A great tagline',
         'genres' => [
@@ -106,11 +113,12 @@ it('fetches movie details by ID with credits and similar movies', function (): v
             ['id' => 12, 'name' => 'Adventure'],
         ],
         'cast' => [
-            ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg'],
-            ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null],
+            ['id' => 1, 'name' => 'Actor One', 'character' => 'Hero', 'profile_path' => '/actor1.jpg', 'order' => 0],
+            ['id' => 2, 'name' => 'Actor Two', 'character' => 'Villain', 'profile_path' => null, 'order' => 1],
         ],
+        'crew' => [],
         'similar' => [
-            ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5],
+            ['id' => 789, 'title' => 'Similar Movie', 'poster_path' => '/similar.jpg', 'backdrop_path' => null, 'overview' => 'Similar overview', 'release_date' => '2024-01-01', 'vote_average' => 6.5, 'popularity' => 45.2, 'genre_ids' => [28]],
         ],
     ]);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\MovieRepository;
 use App\Services\TmdbService;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +18,8 @@ class AppServiceProvider extends ServiceProvider
                 apiToken: config('services.tmdb.api_key'),
             );
         });
+
+        $this->app->singleton(MovieRepository::class);
     }
 
     /**
