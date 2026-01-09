@@ -16,3 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Handle htmx:oobErrorNoTarget events gracefully
+document.addEventListener('htmx:oobErrorNoTarget', (event) => {
+    console.warn('HTMX OOB target not found:', event.detail.content);
+    // Optional: Show user-friendly message
+    const errorMsg = document.getElementById('htmx-error-message');
+    if (errorMsg) {
+        errorMsg.textContent = 'Some updates could not be applied.';
+        errorMsg.style.display = 'block';
+        setTimeout(() => {
+            errorMsg.style.display = 'none';
+        }, 3000);
+    }
+});

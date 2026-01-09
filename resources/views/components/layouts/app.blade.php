@@ -51,6 +51,11 @@
             <!-- Page Content -->
             {{ $slot }}
         </main>
+        
+        <!-- HTMX Error Message -->
+        <div id="htmx-error-message" class="hidden fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg">
+            Error occurred
+        </div>
     </div>
 </body>
 </html>
