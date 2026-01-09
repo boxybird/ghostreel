@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\MovieCast;
 use App\Models\Person;
@@ -61,7 +62,7 @@ class SyncMovieDetailsJob implements ShouldQueue
 
         // Persist similar movies to the database (basic info only)
         foreach ($details['similar'] as $similarData) {
-            Movie::updateOrCreate(
+            $similarMovie = Movie::updateOrCreate(
                 ['tmdb_id' => $similarData['id']],
                 [
                     'title' => $similarData['title'],
@@ -71,10 +72,11 @@ class SyncMovieDetailsJob implements ShouldQueue
                     'release_date' => $similarData['release_date'] ?: null,
                     'vote_average' => $similarData['vote_average'],
                     'tmdb_popularity' => $similarData['popularity'],
-                    'genre_ids' => $similarData['genre_ids'],
                     'source' => 'search',
                 ]
             );
+
+            $this->syncGenres($similarMovie, $similarData['genre_ids']);
         }
 
         // Extract genre IDs from the genres array (defensive for incomplete API responses)
@@ -93,10 +95,12 @@ class SyncMovieDetailsJob implements ShouldQueue
             'runtime' => $details['runtime'] ?? null,
             'crew' => $crew,
             'similar_tmdb_ids' => $similarTmdbIds,
-            'genre_ids' => $genreIds,
             'tmdb_popularity' => $popularity,
             'details_synced_at' => now(),
         ]);
+
+        // Sync genres via pivot table
+        $this->syncGenres($movie, $genreIds);
 
         // Sync cast members (defensive for incomplete API responses)
         /** @var array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}> $castData */
@@ -134,5 +138,20 @@ class SyncMovieDetailsJob implements ShouldQueue
                 'order' => $personData['order'],
             ]);
         }
+    }
+
+    /**
+     * Sync genres for the movie via the pivot table.
+     *
+     * @param  array<int, int>  $tmdbGenreIds
+     */
+    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
+    {
+        if ($tmdbGenreIds === []) {
+            return;
+        }
+
+        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
+        $movie->genres()->sync($genreIds);
     }
 }

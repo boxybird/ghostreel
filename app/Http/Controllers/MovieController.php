@@ -104,13 +104,9 @@ class MovieController extends Controller
             'title' => $movie->title,
             'tagline' => $movie->tagline,
             'runtime' => $movie->runtime,
-            'genres' => $movie->genre_ids !== null
-                ? $this->movieRepo->getAllGenres()
-                    ->whereIn('tmdb_id', $movie->genre_ids)
-                    ->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name])
-                    ->values()
-                    ->all()
-                : [],
+            'genres' => $movie->genres
+                ->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name])
+                ->all(),
             'cast' => $cast,
             'similar' => $similarMovies,
         ];

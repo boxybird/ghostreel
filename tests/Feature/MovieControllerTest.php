@@ -14,8 +14,8 @@ describe('MovieController', function (): void {
             Queue::fake();
 
             // Create genres in DB for the controller to look up
-            Genre::factory()->create(['tmdb_id' => 28, 'name' => 'Action']);
-            Genre::factory()->create(['tmdb_id' => 12, 'name' => 'Adventure']);
+            $actionGenre = Genre::factory()->create(['tmdb_id' => 28, 'name' => 'Action']);
+            $adventureGenre = Genre::factory()->create(['tmdb_id' => 12, 'name' => 'Adventure']);
 
             $movie = Movie::factory()->create([
                 'title' => 'Test Movie Title',
@@ -23,9 +23,11 @@ describe('MovieController', function (): void {
                 'vote_average' => 8.5,
                 'tagline' => 'The ultimate test',
                 'runtime' => 120,
-                'genre_ids' => [28, 12],
                 'details_synced_at' => now(), // Mark as already synced so no job dispatches
             ]);
+
+            // Attach genres via the pivot table relationship
+            $movie->genres()->attach([$actionGenre->id, $adventureGenre->id]);
 
             // Mock TMDB service for cast retrieval fallback (since no cast in DB)
             $this->mock(TmdbService::class, function ($mock) use ($movie): void {

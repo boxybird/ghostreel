@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SearchRequest;
+use App\Models\Genre;
 use App\Models\Movie;
 use App\Services\MovieRepository;
 use App\Services\TmdbService;
@@ -66,21 +67,26 @@ class SearchController extends Controller
      */
     private function seedMoviesToDatabase(Collection $movies): void
     {
-        foreach ($movies as $movie) {
-            Movie::updateOrCreate(
-                ['tmdb_id' => $movie['id']],
+        foreach ($movies as $movieData) {
+            $movie = Movie::updateOrCreate(
+                ['tmdb_id' => $movieData['id']],
                 [
-                    'title' => $movie['title'],
-                    'poster_path' => $movie['poster_path'],
-                    'backdrop_path' => $movie['backdrop_path'],
-                    'overview' => $movie['overview'],
-                    'release_date' => $movie['release_date'] ?: null,
-                    'vote_average' => $movie['vote_average'],
-                    'tmdb_popularity' => $movie['popularity'],
-                    'genre_ids' => $movie['genre_ids'],
+                    'title' => $movieData['title'],
+                    'poster_path' => $movieData['poster_path'],
+                    'backdrop_path' => $movieData['backdrop_path'],
+                    'overview' => $movieData['overview'],
+                    'release_date' => $movieData['release_date'] ?: null,
+                    'vote_average' => $movieData['vote_average'],
+                    'tmdb_popularity' => $movieData['popularity'],
                     'source' => 'search',
                 ]
             );
+
+            // Sync genres via pivot table
+            if (! empty($movieData['genre_ids'])) {
+                $genreIds = Genre::whereIn('tmdb_id', $movieData['genre_ids'])->pluck('id');
+                $movie->genres()->sync($genreIds);
+            }
         }
     }
 

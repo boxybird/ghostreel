@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Genre;
 use App\Models\GenreSnapshot;
 use App\Models\Movie;
 use App\Services\TmdbService;
@@ -73,10 +74,12 @@ class SyncGenreMoviesJob implements ShouldQueue
                         'release_date' => $movieData['release_date'] ?: null,
                         'vote_average' => $movieData['vote_average'],
                         'tmdb_popularity' => $movieData['popularity'],
-                        'genre_ids' => $movieData['genre_ids'],
                         'source' => 'search',
                     ]
                 );
+
+                // Sync genres via pivot table
+                $this->syncGenres($movie, $movieData['genre_ids']);
 
                 // Create or update genre snapshot for today
                 GenreSnapshot::updateOrCreate(
@@ -101,5 +104,20 @@ class SyncGenreMoviesJob implements ShouldQueue
         }
 
         Log::info("SyncGenreMoviesJob: Completed sync for genre {$this->genreId}, {$position} total movies");
+    }
+
+    /**
+     * Sync genres for the movie via the pivot table.
+     *
+     * @param  array<int, int>  $tmdbGenreIds
+     */
+    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
+    {
+        if ($tmdbGenreIds === []) {
+            return;
+        }
+
+        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
+        $movie->genres()->sync($genreIds);
     }
 }

@@ -24,7 +24,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $runtime
  * @property array<int, array{name: string, job: string, department: string}>|null $crew
  * @property array<int, int>|null $similar_tmdb_ids
- * @property array<int, int>|null $genre_ids
  * @property Carbon|null $details_synced_at
  * @property string $source
  * @property Carbon $created_at
@@ -33,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, GenreSnapshot> $genreSnapshots
  * @property-read Collection<int, MovieCast> $castMembers
  * @property-read Collection<int, Person> $people
+ * @property-read Collection<int, Genre> $genres
  */
 class Movie extends Model
 {
@@ -55,7 +55,6 @@ class Movie extends Model
         'runtime',
         'crew',
         'similar_tmdb_ids',
-        'genre_ids',
         'details_synced_at',
         'source',
     ];
@@ -73,7 +72,6 @@ class Movie extends Model
             'runtime' => 'integer',
             'crew' => 'array',
             'similar_tmdb_ids' => 'array',
-            'genre_ids' => 'array',
             'details_synced_at' => 'datetime',
         ];
     }
@@ -119,6 +117,16 @@ class Movie extends Model
             ->withPivot(['character', 'order'])
             ->withTimestamps()
             ->orderByPivot('order');
+    }
+
+    /**
+     * Get genres associated with this movie.
+     *
+     * @return BelongsToMany<Genre, $this>
+     */
+    public function genres(): BelongsToMany
+    {
+        return $this->belongsToMany(Genre::class)->withTimestamps();
     }
 
     /**

@@ -67,10 +67,9 @@ class MovieRepository
                 ->paginate(self::ITEMS_PER_PAGE, ['*'], 'page', $page);
         }
 
-        // Fallback: return movies with this genre_id sorted by popularity
+        // Fallback: return movies with this genre via the pivot table, sorted by popularity
         return Movie::query()
-            ->whereNotNull('genre_ids')
-            ->whereRaw("json_extract(genre_ids, '$') LIKE ?", ["%{$genreId}%"])
+            ->whereHas('genres', fn ($q) => $q->where('genres.tmdb_id', $genreId))
             ->orderByDesc('tmdb_popularity')
             ->paginate(self::ITEMS_PER_PAGE, ['*'], 'page', $page);
     }

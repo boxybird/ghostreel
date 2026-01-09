@@ -48,4 +48,16 @@ class MovieFactory extends Factory
             'source' => 'search',
         ]);
     }
+
+    /**
+     * Attach genres to the movie after creation.
+     *
+     * @param  array<int, int>  $genreIds  Array of genre IDs (primary keys, not TMDB IDs)
+     */
+    public function withGenres(array $genreIds = []): static
+    {
+        return $this->afterCreating(function ($movie) use ($genreIds): void {
+            $movie->genres()->attach($genreIds);
+        });
+    }
 }
