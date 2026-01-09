@@ -28,7 +28,7 @@ return new class extends Migration
 
         // Add proper foreign key column
         Schema::table('genre_snapshots', function (Blueprint $table): void {
-            $table->foreignId('genre_id')->after('movie_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('genre_id')->nullable()->after('movie_id')->constrained()->cascadeOnDelete();
 
             // Re-add indexes with proper FK
             $table->unique(['movie_id', 'genre_id', 'snapshot_date']);
