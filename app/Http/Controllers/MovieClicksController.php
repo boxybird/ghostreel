@@ -14,24 +14,20 @@ class MovieClicksController extends Controller
     ) {}
 
     /**
-     * Determine the current page context based on the request.
+     * Determine the current page context based on the referer.
      */
     private function getPageContext(Request $request): string
     {
         $referer = $request->header('Referer');
-        $currentPath = $request->path();
-        
-        // Check if we're on movie detail page
-        if (str_contains($referer, '/movies/') && str_contains($currentPath, '/movies/')) {
+
+        if ($referer && str_contains($referer, '/movies/')) {
             return 'movie-detail';
         }
-        
-        // Check if we're on search page (by URL pattern)
-        if (str_contains($currentPath, '/search') || $request->header('HX-Trigger') === 'search') {
+
+        if ($referer && str_contains($referer, '/search')) {
             return 'search';
         }
-        
-        // Default to heatmap/homepage
+
         return 'heatmap';
     }
 
@@ -48,8 +44,6 @@ class MovieClicksController extends Controller
         ]);
 
         if ($request->header('HX-Request')) {
-            $recentViews = $this->movieService->getRecentViews();
-
             // Get updated click count for this movie
             $clickCount = MovieClick::where('tmdb_movie_id', $validated['tmdb_movie_id'])
                 ->where('clicked_at', '>=', now()->subDay())
@@ -74,7 +68,7 @@ class MovieClicksController extends Controller
                 default => 'bg-dark-surface text-text-primary',
             };
 
-            // Always include badge update
+            // 1. Always include badge update (this is the direct target for movie cards)
             $html = view('heatmap.partials.movie-badge', [
                 'movieId' => $validated['tmdb_movie_id'],
                 'rank' => $rank,
@@ -85,12 +79,15 @@ class MovieClicksController extends Controller
                 'clickBadgeLabel' => 'view',
             ])->render();
 
-            // Always include recent views update
-            $html .= view('heatmap.partials.recent-views', [
-                'recentViews' => $recentViews,
-            ])->render();
+            // 2. Conditionally include sidebar update (only if not on detail page)
+            if (! $isMovieDetailPage) {
+                $recentViews = $this->movieService->getRecentViews();
+                $html .= view('heatmap.partials.recent-views', [
+                    'recentViews' => $recentViews,
+                ])->render();
+            }
 
-            // Conditionally include movie stats update for detail pages
+            // 3. Conditionally include movie stats update for detail pages
             if ($isMovieDetailPage) {
                 $html .= '<div id="movie-stats-today" hx-swap-oob="true" class="flex items-center gap-2 px-4 py-2 bg-neon-cyan/10 border border-neon-cyan/30 rounded-full">
                     <svg class="w-5 h-5 text-neon-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
