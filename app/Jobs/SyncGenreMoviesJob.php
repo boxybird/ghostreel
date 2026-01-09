@@ -39,18 +39,27 @@ class SyncGenreMoviesJob implements ShouldQueue
      */
     public function handle(TmdbService $tmdb): void
     {
+        // Look up the Genre by TMDB ID to get the database ID
+        $genre = Genre::where('tmdb_id', $this->genreId)->first();
+
+        if ($genre === null) {
+            Log::warning("SyncGenreMoviesJob: Genre with TMDB ID {$this->genreId} not found in database");
+
+            return;
+        }
+
         $today = now()->toDateString();
         $position = 0;
         $processedTmdbIds = [];
 
-        Log::info("SyncGenreMoviesJob: Starting sync for genre {$this->genreId}, {$this->pages} pages");
+        Log::info("SyncGenreMoviesJob: Starting sync for genre {$genre->name} (ID: {$genre->id}), {$this->pages} pages");
 
         for ($page = 1; $page <= $this->pages; $page++) {
             $data = $tmdb->discoverMoviesByGenre($this->genreId, $page);
             $movies = $data['movies'];
 
             if ($movies->isEmpty()) {
-                Log::warning("SyncGenreMoviesJob: No movies returned for genre {$this->genreId}, page {$page}");
+                Log::warning("SyncGenreMoviesJob: No movies returned for genre {$genre->name}, page {$page}");
 
                 continue;
             }
@@ -81,11 +90,11 @@ class SyncGenreMoviesJob implements ShouldQueue
                 // Sync genres via pivot table
                 $this->syncGenres($movie, $movieData['genre_ids']);
 
-                // Create or update genre snapshot for today
+                // Create or update genre snapshot for today (using genre.id, not tmdb_id)
                 GenreSnapshot::updateOrCreate(
                     [
                         'movie_id' => $movie->id,
-                        'genre_id' => $this->genreId,
+                        'genre_id' => $genre->id,
                         'snapshot_date' => $today,
                     ],
                     [
@@ -95,7 +104,7 @@ class SyncGenreMoviesJob implements ShouldQueue
                 );
             }
 
-            Log::info("SyncGenreMoviesJob: Synced genre {$this->genreId} page {$page} with {$movies->count()} movies");
+            Log::info("SyncGenreMoviesJob: Synced genre {$genre->name} page {$page} with {$movies->count()} movies");
 
             // Be nice to the API - small delay between pages
             if ($page < $this->pages) {
@@ -103,7 +112,7 @@ class SyncGenreMoviesJob implements ShouldQueue
             }
         }
 
-        Log::info("SyncGenreMoviesJob: Completed sync for genre {$this->genreId}, {$position} total movies");
+        Log::info("SyncGenreMoviesJob: Completed sync for genre {$genre->name}, {$position} total movies");
     }
 
     /**

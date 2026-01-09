@@ -46,7 +46,7 @@ class Genre extends Model
      */
     public function genreSnapshots(): HasMany
     {
-        return $this->hasMany(GenreSnapshot::class, 'genre_id', 'tmdb_id');
+        return $this->hasMany(GenreSnapshot::class);
     }
 
     /**

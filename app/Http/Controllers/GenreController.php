@@ -35,15 +35,20 @@ class GenreController extends Controller
     {
         $page = (int) $request->input('page', 1);
 
-        // Ensure we have data (dispatches job if needed)
-        $this->movieRepo->ensureGenreDataAvailable($genreId);
+        // Find genre by TMDB ID
+        $genre = $this->movieRepo->getGenreByTmdbId($genreId);
 
-        $paginator = $this->movieRepo->getMoviesByGenre($genreId, $page);
+        if (!$genre instanceof \App\Models\Genre) {
+            abort(404, 'Genre not found');
+        }
+
+        // Ensure we have data (dispatches job if needed)
+        $this->movieRepo->ensureGenreDataAvailable($genre);
+
+        $paginator = $this->movieRepo->getMoviesByGenre($genre, $page);
         $genreMovies = $paginator->items();
 
-        // Find genre name from DB
-        $genre = $this->movieRepo->getGenreByTmdbId($genreId);
-        $genreName = $genre instanceof \App\Models\Genre ? $genre->name : 'Unknown';
+        $genreName = $genre->name;
 
         $tmdbIds = collect($genreMovies)->pluck('tmdb_id')->toArray();
         $clickCounts = $this->getClickCounts($tmdbIds);

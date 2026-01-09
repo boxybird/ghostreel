@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read Movie $movie
+ * @property-read Genre $genre
  */
 class GenreSnapshot extends Model
 {
@@ -52,5 +53,15 @@ class GenreSnapshot extends Model
     public function movie(): BelongsTo
     {
         return $this->belongsTo(Movie::class);
+    }
+
+    /**
+     * Get the genre this snapshot belongs to.
+     *
+     * @return BelongsTo<Genre, $this>
+     */
+    public function genre(): BelongsTo
+    {
+        return $this->belongsTo(Genre::class);
     }
 }

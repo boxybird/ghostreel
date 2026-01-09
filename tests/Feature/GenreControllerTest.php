@@ -93,20 +93,23 @@ it('returns list of genres as JSON', function (): void {
 });
 
 it('returns movies filtered by genre', function (): void {
+    // Get the Action genre's database ID
+    $actionGenre = Genre::where('tmdb_id', 28)->first();
+
     // Seed movies and genre snapshots for this test
     $movie1 = Movie::factory()->create(['tmdb_id' => 1001, 'title' => 'Action Movie 1']);
     $movie2 = Movie::factory()->create(['tmdb_id' => 1002, 'title' => 'Action Movie 2']);
 
     GenreSnapshot::create([
         'movie_id' => $movie1->id,
-        'genre_id' => 28,
+        'genre_id' => $actionGenre->id,
         'position' => 1,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),
     ]);
     GenreSnapshot::create([
         'movie_id' => $movie2->id,
-        'genre_id' => 28,
+        'genre_id' => $actionGenre->id,
         'position' => 2,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),
@@ -123,11 +126,14 @@ it('returns movies filtered by genre', function (): void {
 });
 
 it('displays genre name in the response', function (): void {
+    // Get the Comedy genre's database ID
+    $comedyGenre = Genre::where('tmdb_id', 35)->first();
+
     // Seed a movie with genre snapshot for Comedy
     $movie = Movie::factory()->create(['tmdb_id' => 2001]);
     GenreSnapshot::create([
         'movie_id' => $movie->id,
-        'genre_id' => 35,
+        'genre_id' => $comedyGenre->id,
         'position' => 1,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),
@@ -140,13 +146,16 @@ it('displays genre name in the response', function (): void {
 });
 
 it('handles pagination for genre movies', function (): void {
+    // Get the Action genre's database ID
+    $actionGenre = Genre::where('tmdb_id', 28)->first();
+
     // Seed movies for multiple pages
     $movies = Movie::factory()->count(25)->create();
 
     foreach ($movies as $index => $movie) {
         GenreSnapshot::create([
             'movie_id' => $movie->id,
-            'genre_id' => 28,
+            'genre_id' => $actionGenre->id,
             'position' => $index + 1,
             'page' => $index < 20 ? 1 : 2,
             'snapshot_date' => now()->toDateString(),
@@ -160,10 +169,13 @@ it('handles pagination for genre movies', function (): void {
 });
 
 it('includes click counts for genre movies', function (): void {
+    // Get the Action genre's database ID
+    $actionGenre = Genre::where('tmdb_id', 28)->first();
+
     $movie = Movie::factory()->create(['tmdb_id' => 1001]);
     GenreSnapshot::create([
         'movie_id' => $movie->id,
-        'genre_id' => 28,
+        'genre_id' => $actionGenre->id,
         'position' => 1,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),
@@ -187,10 +199,13 @@ it('includes click counts for genre movies', function (): void {
 });
 
 it('excludes old clicks from genre movie click counts', function (): void {
+    // Get the Action genre's database ID
+    $actionGenre = Genre::where('tmdb_id', 28)->first();
+
     $movie = Movie::factory()->create(['tmdb_id' => 1001]);
     GenreSnapshot::create([
         'movie_id' => $movie->id,
-        'genre_id' => 28,
+        'genre_id' => $actionGenre->id,
         'position' => 1,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),
@@ -217,20 +232,22 @@ it('excludes old clicks from genre movie click counts', function (): void {
     expect($movieWithClicks['click_count'])->toBe(1);
 });
 
-it('handles unknown genre gracefully', function (): void {
-    // When no data exists for a genre, it should still work (fallback)
+it('returns 404 for unknown genre', function (): void {
+    // When no genre exists with this TMDB ID, return 404
     $response = $this->get('/genres/99999');
 
-    $response->assertSuccessful();
-    $response->assertViewHas('genreName', 'Unknown');
+    $response->assertNotFound();
 });
 
 it('caps total pages at 500 when data exceeds limit', function (): void {
+    // Get the Action genre's database ID
+    $actionGenre = Genre::where('tmdb_id', 28)->first();
+
     // Create a movie with genre snapshot
     $movie = Movie::factory()->create();
     GenreSnapshot::create([
         'movie_id' => $movie->id,
-        'genre_id' => 28,
+        'genre_id' => $actionGenre->id,
         'position' => 1,
         'page' => 1,
         'snapshot_date' => now()->toDateString(),

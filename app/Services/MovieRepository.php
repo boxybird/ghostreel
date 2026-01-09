@@ -52,16 +52,16 @@ class MovieRepository
      *
      * @return LengthAwarePaginator<int, Movie>
      */
-    public function getMoviesByGenre(int $genreId, int $page = 1, ?Carbon $date = null): LengthAwarePaginator
+    public function getMoviesByGenre(Genre $genre, int $page = 1, ?Carbon $date = null): LengthAwarePaginator
     {
         $date = $date ?? now();
 
         // Check if we have a snapshot for this genre/date
-        if ($this->hasGenreSnapshotFor($genreId, $date)) {
+        if ($this->hasGenreSnapshotFor($genre, $date)) {
             return Movie::query()
                 ->select('movies.*')
                 ->join('genre_snapshots', 'movies.id', '=', 'genre_snapshots.movie_id')
-                ->where('genre_snapshots.genre_id', $genreId)
+                ->where('genre_snapshots.genre_id', $genre->id)
                 ->whereDate('genre_snapshots.snapshot_date', $date)
                 ->orderBy('genre_snapshots.position')
                 ->paginate(self::ITEMS_PER_PAGE, ['*'], 'page', $page);
@@ -69,7 +69,7 @@ class MovieRepository
 
         // Fallback: return movies with this genre via the pivot table, sorted by popularity
         return Movie::query()
-            ->whereHas('genres', fn ($q) => $q->where('genres.tmdb_id', $genreId))
+            ->whereHas('genres', fn ($q) => $q->where('genres.id', $genre->id))
             ->orderByDesc('tmdb_popularity')
             ->paginate(self::ITEMS_PER_PAGE, ['*'], 'page', $page);
     }
@@ -118,10 +118,10 @@ class MovieRepository
     /**
      * Check if a genre snapshot exists for the given genre and date.
      */
-    public function hasGenreSnapshotFor(int $genreId, Carbon $date): bool
+    public function hasGenreSnapshotFor(Genre $genre, Carbon $date): bool
     {
         return GenreSnapshot::query()
-            ->where('genre_id', $genreId)
+            ->where('genre_id', $genre->id)
             ->whereDate('snapshot_date', $date)
             ->exists();
     }
@@ -147,15 +147,16 @@ class MovieRepository
     /**
      * Ensure genre data is available, dispatching sync jobs if needed.
      */
-    public function ensureGenreDataAvailable(int $genreId): void
+    public function ensureGenreDataAvailable(Genre $genre): void
     {
         // Ensure genres table is populated
         if (Genre::count() === 0) {
             SyncAllGenresJob::dispatch(pagesPerGenre: 5, syncMovies: false);
         }
 
-        if (! $this->hasGenreSnapshotFor($genreId, now())) {
-            SyncGenreMoviesJob::dispatch($genreId, pages: 5);
+        if (! $this->hasGenreSnapshotFor($genre, now())) {
+            // SyncGenreMoviesJob still expects TMDB ID since that's what TMDB API uses
+            SyncGenreMoviesJob::dispatch($genre->tmdb_id, pages: 5);
         }
     }
 
@@ -203,10 +204,10 @@ class MovieRepository
     /**
      * Get the total pages available for genre movies on a given date.
      */
-    public function getGenreTotalPages(int $genreId, Carbon $date): int
+    public function getGenreTotalPages(Genre $genre, Carbon $date): int
     {
         $count = GenreSnapshot::query()
-            ->where('genre_id', $genreId)
+            ->where('genre_id', $genre->id)
             ->whereDate('snapshot_date', $date)
             ->count();
 
