@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LogClickRequest;
 use App\Models\MovieClick;
 use App\Services\MovieService;
-use Illuminate\Http\JsonResponse;
 
 class MovieClicksController extends Controller
 {
@@ -27,21 +26,21 @@ class MovieClicksController extends Controller
 
         if ($request->header('HX-Request')) {
             $recentViews = $this->movieService->getRecentViews();
-            
+
             // Get updated click count for this movie
             $clickCount = MovieClick::where('tmdb_movie_id', $validated['tmdb_movie_id'])
                 ->where('clicked_at', '>=', now()->subDay())
                 ->count();
 
             // Badge styling logic
-            $badgeClasses = match(true) {
+            $badgeClasses = match (true) {
                 $clickCount > 5 => 'bg-neon-pink text-white',
                 $clickCount > 2 => 'bg-neon-orange text-dark-bg',
                 default => 'bg-neon-cyan text-dark-bg',
             };
 
-            $rank = $request->input('rank'); 
-            $rankClasses = match((int)$rank) {
+            $rank = $request->input('rank');
+            $rankClasses = match ((int) $rank) {
                 1 => 'bg-yellow-400 text-dark-bg',
                 2 => 'bg-gray-300 text-dark-bg',
                 3 => 'bg-amber-600 text-white',
@@ -55,11 +54,11 @@ class MovieClicksController extends Controller
                 'showClickBadge' => true,
                 'clickCount' => $clickCount,
                 'badgeClasses' => $badgeClasses,
-                'clickBadgeLabel' => 'view'
+                'clickBadgeLabel' => 'view',
             ])->render();
 
             $html .= view('heatmap.partials.recent-views', [
-                'recentViews' => $recentViews
+                'recentViews' => $recentViews,
             ])->render();
 
             // Update detail page stats if we're on that page
@@ -67,7 +66,7 @@ class MovieClicksController extends Controller
                 <svg class="w-5 h-5 text-neon-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>
                 </svg>
-                <span class="text-neon-cyan font-semibold">' . $clickCount . '</span>
+                <span class="text-neon-cyan font-semibold">'.$clickCount.'</span>
                 <span class="text-sm text-text-muted">views today</span>
             </div>';
 
