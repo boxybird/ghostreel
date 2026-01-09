@@ -84,7 +84,8 @@
             "@format",
             "@analyse",
             "@test",
-            "@coverage"
+            "@coverage",
+            "npx playwright test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
