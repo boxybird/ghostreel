@@ -3,6 +3,7 @@ import htmx from 'htmx.org';
 
 // Feature modules - import to make functions available globally
 import './features/search-dialog.js';
+import './features/ghost-buttons.js';
 
 // Make htmx available globally
 window.htmx = htmx;

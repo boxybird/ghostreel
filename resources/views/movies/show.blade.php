@@ -49,7 +49,8 @@
                 hx-post="{{ route('clicks.store') }}"
                 hx-vals="{{ json_encode(['tmdb_movie_id' => (int)$movie->tmdb_id, 'movie_title' => $movie->title, 'poster_path' => $movie->poster_path]) }}"
                 hx-swap="none"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-semibold rounded-lg hover:bg-neon-cyan/90 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-neon-cyan/30 htmx-trigger"
+                hx-trigger="click consume"
+                class="ghost-action-btn inline-flex items-center gap-2 px-4 py-2 bg-neon-cyan text-dark-bg font-semibold rounded-lg hover:bg-neon-cyan/90 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-neon-cyan/30 htmx-trigger"
             >
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 10h.01"/>
