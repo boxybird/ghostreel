@@ -4,7 +4,7 @@ use App\Http\Controllers\GenreMoviesController;
 use App\Http\Controllers\GenresController;
 use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\HeatmapDataController;
-use App\Http\Controllers\MovieClicksController;
+use App\Http\Controllers\MovieClickController;
 use App\Http\Controllers\MoviesController;
 use App\Http\Controllers\PopularMoviesController;
 use App\Http\Controllers\RecentClicksController;
@@ -17,7 +17,7 @@ Route::get('/', [HeatmapController::class, 'index'])->name('heatmap.index');
 
 // Heatmap Data & Interactions
 Route::get('/heatmap-data', [HeatmapDataController::class, 'index'])->name('heatmap.data');
-Route::post('/clicks', [MovieClicksController::class, 'store'])->name('clicks.store');
+Route::post('/clicks', [MovieClickController::class, 'store'])->name('clicks.store');
 Route::get('/recent-clicks', [RecentClicksController::class, 'index'])->name('clicks.recent');
 
 // Trending & Popular

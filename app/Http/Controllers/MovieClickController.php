@@ -7,14 +7,14 @@ use App\Models\MovieClick;
 use App\Services\MovieService;
 use Illuminate\Http\Request;
 
-class MovieClicksController extends Controller
+class MovieClickController extends Controller
 {
     public function __construct(
         private readonly MovieService $movieService,
     ) {}
 
     /**
-     * Determine the current page context based on the referer.
+     * Determine current page context based on referer.
      */
     private function getPageContext(Request $request): string
     {
