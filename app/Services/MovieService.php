@@ -114,22 +114,15 @@ class MovieService
     /**
      * Get the most recent movie views for the sidebar.
      *
-     * @return Collection<int, array{id: int, tmdb_movie_id: int, movie_title: string, poster_url: ?string, clicked_at: string}>
+     * @return EloquentCollection<int, MovieClick>
      */
-    public function getRecentViews(int $limit = 10): Collection
+    public function getRecentViews(int $limit = 10): EloquentCollection
     {
         return MovieClick::query()
             ->select(['id', 'tmdb_movie_id', 'movie_title', 'poster_path', 'clicked_at'])
             ->orderByDesc('clicked_at')
             ->limit($limit)
-            ->get()
-            ->map(fn (MovieClick $click): array => [
-                'id' => $click->id,
-                'tmdb_movie_id' => $click->tmdb_movie_id,
-                'movie_title' => $click->movie_title,
-                'poster_url' => TmdbService::posterUrl($click->poster_path, 'w185'),
-                'clicked_at' => $click->clicked_at->diffForHumans(),
-            ]);
+            ->get();
     }
 
     /**

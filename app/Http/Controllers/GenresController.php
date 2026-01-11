@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\GenreResource;
 use App\Services\MovieService;
 use Illuminate\Http\JsonResponse;
 
@@ -16,7 +17,7 @@ class GenresController extends Controller
         $genres = $this->movieService->getAllGenres();
 
         return response()->json([
-            'genres' => $genres->map(fn ($g): array => ['id' => $g->tmdb_id, 'name' => $g->name]),
+            'genres' => GenreResource::collection($genres),
         ]);
     }
 }

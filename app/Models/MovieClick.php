@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\TmdbService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon $clicked_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property-read string|null $poster_url
  */
 class MovieClick extends Model
 {
@@ -41,5 +44,15 @@ class MovieClick extends Model
             'tmdb_movie_id' => 'integer',
             'clicked_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return Attribute<?string, never>
+     */
+    protected function posterUrl(): Attribute
+    {
+        return Attribute::get(
+            fn (): ?string => TmdbService::posterUrl($this->poster_path, 'w185')
+        );
     }
 }

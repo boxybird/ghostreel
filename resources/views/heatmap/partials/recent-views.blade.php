@@ -1,8 +1,8 @@
 <div id="recent-views-sidebar" @if(request()->header('HX-Request')) hx-swap-oob="true" @endif class="space-y-2 max-h-64 overflow-y-auto">
     @forelse ($recentViews as $view)
         <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5">
-            @if ($view['poster_url'])
-                <img src="{{ $view['poster_url'] }}" alt="{{ $view['movie_title'] }}" class="w-8 h-12 rounded object-cover">
+            @if ($view->poster_url)
+                <img src="{{ $view->poster_url }}" alt="{{ $view->movie_title }}" class="w-8 h-12 rounded object-cover">
             @else
                 <div class="w-8 h-12 rounded bg-dark-card flex items-center justify-center">
                     <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,8 +11,8 @@
                 </div>
             @endif
             <div class="hidden lg:block flex-1 min-w-0">
-                <p class="text-xs font-medium truncate">{{ $view['movie_title'] }}</p>
-                <p class="text-xs text-text-muted">{{ $view['clicked_at'] }}</p>
+                <p class="text-xs font-medium truncate">{{ $view->movie_title }}</p>
+                <p class="text-xs text-text-muted">{{ $view->clicked_at->diffForHumans() }}</p>
             </div>
         </div>
     @empty

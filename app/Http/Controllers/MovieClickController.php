@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LogClickRequest;
+use App\Http\Resources\RecentViewResource;
 use App\Models\MovieClick;
 use App\Services\MovieService;
 use Illuminate\Http\Request;
@@ -101,7 +102,7 @@ class MovieClickController extends Controller
         return response()->json([
             'success' => true,
             'click_id' => $click->id,
-            'recent_views' => $this->movieService->getRecentViews(),
+            'recent_views' => RecentViewResource::collection($this->movieService->getRecentViews()),
         ]);
     }
 }
