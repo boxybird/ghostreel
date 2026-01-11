@@ -15,7 +15,7 @@ return new class extends Migration
         DB::transaction(function (): void {
             $subquery = DB::table('movie_clicks as mc1')
                 ->select('mc1.id')
-                ->join('movie_clicks as mc2', function ($join) {
+                ->join('movie_clicks as mc2', function ($join): void {
                     $join->on('mc1.ip_address', '=', 'mc2.ip_address')
                         ->on('mc1.tmdb_movie_id', '=', 'mc2.tmdb_movie_id')
                         ->on('mc1.clicked_at', '=', 'mc2.clicked_at');
