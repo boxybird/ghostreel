@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\GetMovieClickStatisticsAction;
 use App\Models\Movie;
-use App\Models\MovieClick;
 use App\Services\MovieService;
 use App\Services\TmdbService;
 use Illuminate\View\View;
@@ -13,6 +13,7 @@ class MoviesController extends Controller
     public function __construct(
         private readonly MovieService $movieService,
         private readonly TmdbService $tmdbService,
+        private readonly GetMovieClickStatisticsAction $getClickStats,
     ) {}
 
     public function show(Movie $movie): View
@@ -49,11 +50,9 @@ class MoviesController extends Controller
         ]);
 
         // Get click statistics
-        $clickCount = MovieClick::where('tmdb_movie_id', $movie->tmdb_id)
-            ->where('clicked_at', '>=', now()->subDay())
-            ->count();
-
-        $totalClickCount = MovieClick::where('tmdb_movie_id', $movie->tmdb_id)->count();
+        $clickStats = $this->getClickStats->handle($movie->tmdb_id);
+        $clickCount = $clickStats['today_count'];
+        $totalClickCount = $clickStats['total_count'];
 
         return view('movies.show', [
             'movie' => $movie,
