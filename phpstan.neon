@@ -36,3 +36,7 @@ parameters:
         -
             identifier: argument.type
             path: tests/Feature/TmdbServiceTest.php
+        # Collection covariance false positives in Pest tests
+        -
+            identifier: argument.type
+            path: tests/Feature/Actions/*
