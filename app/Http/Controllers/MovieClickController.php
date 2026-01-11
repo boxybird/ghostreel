@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\LogMovieClickAction;
 use App\Http\Requests\LogClickRequest;
 use App\Http\Resources\RecentViewResource;
-use App\Models\MovieClick;
 use App\Services\MovieService;
 use Illuminate\Http\Request;
 
@@ -12,6 +12,7 @@ class MovieClickController extends Controller
 {
     public function __construct(
         private readonly MovieService $movieService,
+        private readonly LogMovieClickAction $logMovieClick,
     ) {}
 
     /**
@@ -36,19 +37,11 @@ class MovieClickController extends Controller
     {
         $validated = $request->validated();
 
-        $click = MovieClick::create([
-            'ip_address' => $request->ip(),
-            'tmdb_movie_id' => $validated['tmdb_movie_id'],
-            'movie_title' => $validated['movie_title'],
-            'poster_path' => $validated['poster_path'] ?? null,
-            'clicked_at' => now(),
-        ]);
+        $result = $this->logMovieClick->handle((string) $request->ip(), $validated);
+        $click = $result['click'];
+        $clickCount = $result['click_count'];
 
         if ($request->header('HX-Request')) {
-            // Get updated click count for this movie
-            $clickCount = MovieClick::where('tmdb_movie_id', $validated['tmdb_movie_id'])
-                ->where('clicked_at', '>=', now()->subDay())
-                ->count();
 
             // Determine page context to conditionally include OOB updates
             $context = $this->getPageContext($request);
