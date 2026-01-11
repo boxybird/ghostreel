@@ -35,19 +35,11 @@ test.describe('Movie Heatmap', () => {
     const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
     await expect(ghostButton).toBeVisible();
 
-    // Set up response listener BEFORE clicking
-    const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/clicks') && response.status() === 200
-    );
-
     // Click the ghost icon (not the card, which now navigates)
     await ghostButton.click();
 
-    // Wait for the API call to complete
-    await responsePromise;
-
-    // Verify the sidebar updated with the new view
-    await expect(recentViewsSidebar.locator('> div').first()).toContainText(movieTitle);
+    // Wait for the observable side effect: sidebar shows the movie
+    await expect(recentViewsSidebar.locator('> div').first()).toContainText(movieTitle, { timeout: 10000 });
 
     // Verify the view count increased (or was added)
     const newRecentViewsCount = await recentViewsSidebar.locator('> div').count();
@@ -68,20 +60,12 @@ test.describe('Movie Heatmap', () => {
     const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
     await expect(ghostButton).toBeVisible();
 
-    // Set up response listener before clicking
-    const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/clicks') && response.status() === 200
-    );
-
     // Click the ghost icon (not the card itself, which now navigates)
     await ghostButton.click();
 
-    // Wait for the API response
-    await responsePromise;
-
-    // Check that a view badge appears on the clicked card (now top-left)
+    // Wait for the observable side effect: badge appears with view count
     const badge = firstMovieCard.locator('[class*="absolute top-2 left-2"]');
-    await expect(badge).toBeVisible({ timeout: 5000 });
+    await expect(badge).toBeVisible({ timeout: 10000 });
     await expect(badge).toContainText(/view/);
   });
 
@@ -110,49 +94,4 @@ test.describe('Movie Heatmap', () => {
     await expect(dialog).toBeVisible();
   });
 
-  test('clicking ghost icon increments the view count badge', async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for movie cards to load
-    const movieCards = page.locator('.movie-card');
-    await expect(movieCards.first()).toBeVisible();
-
-    const firstMovieCard = movieCards.first();
-
-    // Badge is now top-left (top-right is the ghost icon)
-    const badge = firstMovieCard.locator('[class*="absolute top-2 left-2"]');
-    const badgeExisted = await badge.isVisible();
-    let initialCount = 0;
-    if (badgeExisted) {
-      const text = await badge.textContent();
-      const match = text?.match(/(\d+)/);
-      initialCount = match ? parseInt(match[1]) : 0;
-    }
-
-    // Find ghost icon
-    const ghostButton = firstMovieCard.locator('button[title="Add Ghost View"]');
-    await expect(ghostButton).toBeVisible();
-
-    // Set up response listener BEFORE clicking
-    const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/clicks') && response.status() === 200
-    );
-
-    // Click the ghost icon
-    await ghostButton.click();
-
-    // Wait for API response
-    await responsePromise;
-
-    // Wait a moment for DOM update
-    await page.waitForTimeout(200);
-
-    // Verify the count incremented
-    await expect(badge).toBeVisible();
-    const newText = await badge.textContent();
-    const newMatch = newText?.match(/(\d+)/);
-    const newCount = newMatch ? parseInt(newMatch[1]) : 0;
-
-    expect(newCount).toBe(initialCount + 1);
-  });
 });

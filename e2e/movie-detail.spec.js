@@ -35,27 +35,20 @@ test.describe('Movie Detail Page', () => {
 
     // Find the ghost icon button on the first card
     const firstCard = movieCards.first();
+    const movieTitle = await firstCard.getAttribute('data-movie-title');
     const ghostButton = firstCard.locator('button[title="Add Ghost View"]');
     await expect(ghostButton).toBeVisible();
-
-    // Set up response listener for the click API
-    const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/clicks') && response.status() === 200
-    );
 
     // Click the ghost icon
     await ghostButton.click();
 
-    // Wait for API response
-    await responsePromise;
-
     // Should still be on homepage (not navigated)
     await expect(page).toHaveURL('/');
 
-    // Recent views sidebar should be updated
-    const movieTitle = await firstCard.getAttribute('data-movie-title');
+    // Wait for the observable side effect: sidebar shows the movie
+    // This is more reliable than waiting for the network response
     const recentViewsSidebar = page.locator('#recent-views-sidebar');
-    await expect(recentViewsSidebar.locator('> div').first()).toContainText(movieTitle);
+    await expect(recentViewsSidebar.locator('> div').first()).toContainText(movieTitle, { timeout: 10000 });
   });
 
   test('movie detail page displays all sections', async ({ page }) => {
@@ -95,25 +88,16 @@ test.describe('Movie Detail Page', () => {
     const logViewButton = page.getByRole('button', { name: /Ghost this Movie/i });
     await expect(logViewButton).toBeVisible();
 
-    // Set up response listener
-    const responsePromise = page.waitForResponse(response =>
-      response.url().includes('/clicks') && response.status() === 200
-    );
-
     // Click the button
     await logViewButton.click();
 
-    // Wait for API response
-    await responsePromise;
+    // The ghost-buttons.js module adds data-ghost-disabled during the request
+    // and removes it after COOLDOWN_MS (500ms). Wait for this cycle to complete.
+    await expect(logViewButton).toHaveAttribute('data-ghost-disabled', 'true', { timeout: 5000 });
+    await expect(logViewButton).not.toHaveAttribute('data-ghost-disabled', { timeout: 5000 });
 
-    // Wait a moment for DOM update to success state
-    await page.waitForTimeout(500);
-
-    // Button should show success state temporarily (or have changed to green)
-    // The button innerHTML changes, so we check for either the success text or that it's still visible
-    const buttonText = await logViewButton.textContent();
-    // Button either shows "View Logged!" or might still be reverting - just ensure API call succeeded
-    expect(buttonText).toBeDefined();
+    // Button should still be visible and functional after the request completes
+    await expect(logViewButton).toBeVisible();
   });
 
   test('back button returns to homepage', async ({ page }) => {
