@@ -2,7 +2,6 @@
 
 namespace App\Actions;
 
-use App\Models\Genre;
 use App\Models\Movie;
 
 class SeedMovieFromTmdbAction
@@ -11,6 +10,10 @@ class SeedMovieFromTmdbAction
      * Valid source values for the movies table enum.
      */
     private const VALID_SOURCES = ['trending', 'search'];
+
+    public function __construct(
+        private readonly SyncGenresForMovieAction $syncGenres,
+    ) {}
 
     /**
      * Create or update a movie from TMDB API data.
@@ -39,20 +42,9 @@ class SeedMovieFromTmdbAction
 
         // Sync genres if provided
         if (! empty($tmdbData['genre_ids'])) {
-            $this->syncGenres($movie, $tmdbData['genre_ids']);
+            $this->syncGenres->handle($movie, $tmdbData['genre_ids']);
         }
 
         return $movie;
-    }
-
-    /**
-     * Sync genres for the movie via the pivot table.
-     *
-     * @param  array<int>  $tmdbGenreIds
-     */
-    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
-    {
-        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
-        $movie->genres()->sync($genreIds);
     }
 }

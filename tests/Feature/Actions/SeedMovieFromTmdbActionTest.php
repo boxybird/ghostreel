@@ -15,7 +15,7 @@ beforeEach(function (): void {
 });
 
 it('creates a new movie from TMDB data', function (): void {
-    $action = new SeedMovieFromTmdbAction;
+    $action = app(SeedMovieFromTmdbAction::class);
 
     $tmdbData = [
         'id' => 550,
@@ -47,7 +47,7 @@ it('updates an existing movie from TMDB data', function (): void {
         'source' => 'search',
     ]);
 
-    $action = new SeedMovieFromTmdbAction;
+    $action = app(SeedMovieFromTmdbAction::class);
 
     $tmdbData = [
         'id' => 550,
@@ -70,7 +70,7 @@ it('updates an existing movie from TMDB data', function (): void {
 });
 
 it('handles empty genre_ids gracefully', function (): void {
-    $action = new SeedMovieFromTmdbAction;
+    $action = app(SeedMovieFromTmdbAction::class);
 
     $tmdbData = [
         'id' => 551,
@@ -91,7 +91,7 @@ it('handles empty genre_ids gracefully', function (): void {
 });
 
 it('handles missing genre_ids key gracefully', function (): void {
-    $action = new SeedMovieFromTmdbAction;
+    $action = app(SeedMovieFromTmdbAction::class);
 
     $tmdbData = [
         'id' => 552,
@@ -110,7 +110,7 @@ it('handles missing genre_ids key gracefully', function (): void {
 });
 
 it('syncs genres that exist in database', function (): void {
-    $action = new SeedMovieFromTmdbAction;
+    $action = app(SeedMovieFromTmdbAction::class);
 
     $tmdbData = [
         'id' => 553,

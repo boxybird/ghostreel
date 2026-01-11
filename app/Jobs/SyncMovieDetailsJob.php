@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\SeedMovieFromTmdbAction;
-use App\Models\Genre;
+use App\Actions\SyncGenresForMovieAction;
 use App\Models\Movie;
 use App\Models\MovieCast;
 use App\Models\Person;
@@ -38,7 +38,7 @@ class SyncMovieDetailsJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie): void
+    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie, SyncGenresForMovieAction $syncGenres): void
     {
         $movie = Movie::find($this->movieId);
 
@@ -88,7 +88,7 @@ class SyncMovieDetailsJob implements ShouldQueue
         $movie->similarMovies()->sync($similarMovieIds);
 
         // Sync genres via pivot table
-        $this->syncGenres($movie, $genreIds);
+        $syncGenres->handle($movie, $genreIds);
 
         // Sync cast members (defensive for incomplete API responses)
         /** @var array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}> $castData */
@@ -126,20 +126,5 @@ class SyncMovieDetailsJob implements ShouldQueue
                 'order' => $personData['order'],
             ]);
         }
-    }
-
-    /**
-     * Sync genres for the movie via the pivot table.
-     *
-     * @param  array<int, int>  $tmdbGenreIds
-     */
-    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
-    {
-        if ($tmdbGenreIds === []) {
-            return;
-        }
-
-        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
-        $movie->genres()->sync($genreIds);
     }
 }
