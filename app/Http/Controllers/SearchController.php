@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SeedMovieFromTmdbAction;
 use App\Http\Requests\SearchRequest;
-use App\Models\Genre;
 use App\Models\Movie;
 use App\Services\MovieService;
 use App\Services\TmdbService;
@@ -15,6 +15,7 @@ class SearchController extends Controller
     public function __construct(
         private readonly MovieService $movieService,
         private readonly TmdbService $tmdbService,
+        private readonly SeedMovieFromTmdbAction $seedMovie,
     ) {}
 
     /**
@@ -35,7 +36,9 @@ class SearchController extends Controller
             $tmdbResults = $this->tmdbService->searchMovies($query, $page);
 
             // Persist TMDB results to local database
-            $this->seedMoviesToDatabase($tmdbResults);
+            foreach ($tmdbResults as $movieData) {
+                $this->seedMovie->handle($movieData, 'search');
+            }
         }
 
         // Merge results, prioritizing local, and dedupe by tmdb_id
@@ -58,36 +61,6 @@ class SearchController extends Controller
             'page' => $page,
             'hasMore' => $tmdbResults->count() >= 20,
         ]);
-    }
-
-    /**
-     * Seed movies from TMDB response to local database.
-     *
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>  $movies
-     */
-    private function seedMoviesToDatabase(Collection $movies): void
-    {
-        foreach ($movies as $movieData) {
-            $movie = Movie::updateOrCreate(
-                ['tmdb_id' => $movieData['id']],
-                [
-                    'title' => $movieData['title'],
-                    'poster_path' => $movieData['poster_path'],
-                    'backdrop_path' => $movieData['backdrop_path'],
-                    'overview' => $movieData['overview'],
-                    'release_date' => $movieData['release_date'] ?: null,
-                    'vote_average' => $movieData['vote_average'],
-                    'tmdb_popularity' => $movieData['popularity'],
-                    'source' => 'search',
-                ]
-            );
-
-            // Sync genres via pivot table
-            if (! empty($movieData['genre_ids'])) {
-                $genreIds = Genre::whereIn('tmdb_id', $movieData['genre_ids'])->pluck('id');
-                $movie->genres()->sync($genreIds);
-            }
-        }
     }
 
     /**

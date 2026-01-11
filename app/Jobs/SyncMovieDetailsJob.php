@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\SeedMovieFromTmdbAction;
 use App\Models\Genre;
 use App\Models\Movie;
 use App\Models\MovieCast;
@@ -37,7 +38,7 @@ class SyncMovieDetailsJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdb): void
+    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie): void
     {
         $movie = Movie::find($this->movieId);
 
@@ -60,22 +61,8 @@ class SyncMovieDetailsJob implements ShouldQueue
         // Persist similar movies to the database and collect their IDs for syncing
         $similarMovieIds = [];
         foreach ($details['similar'] as $similarData) {
-            $similarMovie = Movie::updateOrCreate(
-                ['tmdb_id' => $similarData['id']],
-                [
-                    'title' => $similarData['title'],
-                    'poster_path' => $similarData['poster_path'],
-                    'backdrop_path' => $similarData['backdrop_path'],
-                    'overview' => $similarData['overview'],
-                    'release_date' => $similarData['release_date'] ?: null,
-                    'vote_average' => $similarData['vote_average'],
-                    'tmdb_popularity' => $similarData['popularity'],
-                    'source' => 'search',
-                ]
-            );
-
+            $similarMovie = $seedMovie->handle($similarData, 'similar');
             $similarMovieIds[] = $similarMovie->id;
-            $this->syncGenres($similarMovie, $similarData['genre_ids']);
         }
 
         // Extract genre IDs from the genres array (defensive for incomplete API responses)

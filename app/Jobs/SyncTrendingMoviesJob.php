@@ -2,8 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Genre;
-use App\Models\Movie;
+use App\Actions\SeedMovieFromTmdbAction;
 use App\Models\TrendingSnapshot;
 use App\Services\TmdbService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,7 +36,7 @@ class SyncTrendingMoviesJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdb): void
+    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie): void
     {
         $today = now()->toDateString();
         $position = 0;
@@ -63,23 +62,8 @@ class SyncTrendingMoviesJob implements ShouldQueue
                 $processedTmdbIds[] = $movieData['id'];
                 $position++;
 
-                // Upsert the movie
-                $movie = Movie::updateOrCreate(
-                    ['tmdb_id' => $movieData['id']],
-                    [
-                        'title' => $movieData['title'],
-                        'poster_path' => $movieData['poster_path'],
-                        'backdrop_path' => $movieData['backdrop_path'],
-                        'overview' => $movieData['overview'],
-                        'release_date' => $movieData['release_date'] ?: null,
-                        'vote_average' => $movieData['vote_average'],
-                        'tmdb_popularity' => $movieData['popularity'],
-                        'source' => 'trending',
-                    ]
-                );
-
-                // Sync genres via pivot table
-                $this->syncGenres($movie, $movieData['genre_ids']);
+                // Upsert the movie with genres
+                $movie = $seedMovie->handle($movieData, 'trending');
 
                 // Create or update trending snapshot for today
                 TrendingSnapshot::updateOrCreate(
@@ -104,20 +88,5 @@ class SyncTrendingMoviesJob implements ShouldQueue
         }
 
         Log::info("SyncTrendingMoviesJob: Completed sync for {$this->listType}, {$position} total movies");
-    }
-
-    /**
-     * Sync genres for the movie via the pivot table.
-     *
-     * @param  array<int, int>  $tmdbGenreIds
-     */
-    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
-    {
-        if ($tmdbGenreIds === []) {
-            return;
-        }
-
-        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
-        $movie->genres()->sync($genreIds);
     }
 }

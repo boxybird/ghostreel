@@ -2,9 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Actions\SeedMovieFromTmdbAction;
 use App\Models\Genre;
 use App\Models\GenreSnapshot;
-use App\Models\Movie;
 use App\Services\TmdbService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -37,7 +37,7 @@ class SyncGenreMoviesJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdb): void
+    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie): void
     {
         // Look up the Genre by TMDB ID to get the database ID
         $genre = Genre::where('tmdb_id', $this->genreId)->first();
@@ -72,23 +72,8 @@ class SyncGenreMoviesJob implements ShouldQueue
                 $processedTmdbIds[] = $movieData['id'];
                 $position++;
 
-                // Upsert the movie
-                $movie = Movie::updateOrCreate(
-                    ['tmdb_id' => $movieData['id']],
-                    [
-                        'title' => $movieData['title'],
-                        'poster_path' => $movieData['poster_path'],
-                        'backdrop_path' => $movieData['backdrop_path'],
-                        'overview' => $movieData['overview'],
-                        'release_date' => $movieData['release_date'] ?: null,
-                        'vote_average' => $movieData['vote_average'],
-                        'tmdb_popularity' => $movieData['popularity'],
-                        'source' => 'search',
-                    ]
-                );
-
-                // Sync genres via pivot table
-                $this->syncGenres($movie, $movieData['genre_ids']);
+                // Upsert the movie with genres
+                $movie = $seedMovie->handle($movieData, 'genre');
 
                 // Create or update genre snapshot for today (using genre.id, not tmdb_id)
                 GenreSnapshot::updateOrCreate(
@@ -113,20 +98,5 @@ class SyncGenreMoviesJob implements ShouldQueue
         }
 
         Log::info("SyncGenreMoviesJob: Completed sync for genre {$genre->name}, {$position} total movies");
-    }
-
-    /**
-     * Sync genres for the movie via the pivot table.
-     *
-     * @param  array<int, int>  $tmdbGenreIds
-     */
-    private function syncGenres(Movie $movie, array $tmdbGenreIds): void
-    {
-        if ($tmdbGenreIds === []) {
-            return;
-        }
-
-        $genreIds = Genre::whereIn('tmdb_id', $tmdbGenreIds)->pluck('id');
-        $movie->genres()->sync($genreIds);
     }
 }
