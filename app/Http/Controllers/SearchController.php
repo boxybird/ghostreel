@@ -2,20 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\SeedMovieFromTmdbAction;
+use App\Actions\SearchMoviesAction;
 use App\Http\Requests\SearchRequest;
-use App\Models\Movie;
-use App\Services\MovieService;
-use App\Services\TmdbService;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 
 class SearchController extends Controller
 {
     public function __construct(
-        private readonly MovieService $movieService,
-        private readonly TmdbService $tmdbService,
-        private readonly SeedMovieFromTmdbAction $seedMovie,
+        private readonly SearchMoviesAction $searchMovies,
     ) {}
 
     /**
@@ -27,69 +21,13 @@ class SearchController extends Controller
         $query = $request->validated('q');
         $page = $request->validated('page', 1);
 
-        // First, search local database
-        $localResults = $this->movieService->searchMovies($query, 20);
-
-        // If local results are insufficient, fallback to TMDB API
-        $tmdbResults = collect();
-        if ($localResults->count() < 5) {
-            $tmdbResults = $this->tmdbService->searchMovies($query, $page);
-
-            // Persist TMDB results to local database
-            foreach ($tmdbResults as $movieData) {
-                $this->seedMovie->handle($movieData, 'search');
-            }
-        }
-
-        // Merge results, prioritizing local, and dedupe by tmdb_id
-        $movies = $this->mergeResults($localResults, $tmdbResults);
-
-        // Get database IDs for movies
-        $tmdbIds = $movies->pluck('id')->toArray();
-        $dbIds = $this->movieService->getDbIds($tmdbIds);
-
-        // Transform for view
-        $results = $movies->map(fn (array $movie): array => [
-            ...$movie,
-            'db_id' => $dbIds[$movie['id']] ?? null,
-            'poster_url' => TmdbService::posterUrl($movie['poster_path']),
-        ]);
+        $result = $this->searchMovies->handle($query, $page);
 
         return view('heatmap.partials.search-results', [
-            'results' => $results,
+            'results' => $result['results'],
             'query' => $query,
             'page' => $page,
-            'hasMore' => $tmdbResults->count() >= 20,
+            'hasMore' => $result['has_more'],
         ]);
-    }
-
-    /**
-     * Merge local and TMDB results, deduping by tmdb_id.
-     *
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Movie>  $localResults
-     * @param  Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float, popularity: float, genre_ids: array<int, int>}>  $tmdbResults
-     * @return Collection<int, array{id: int, title: string, poster_path: ?string, backdrop_path: ?string, overview: string, release_date: string, vote_average: float}>
-     */
-    private function mergeResults(\Illuminate\Database\Eloquent\Collection $localResults, Collection $tmdbResults): Collection
-    {
-        // Transform local results to array format
-        $local = $localResults->map(fn (Movie $movie): array => [
-            'id' => $movie->tmdb_id,
-            'title' => $movie->title,
-            'poster_path' => $movie->poster_path,
-            'backdrop_path' => $movie->backdrop_path,
-            'overview' => $movie->overview ?? '',
-            'release_date' => $movie->release_date?->format('Y-m-d') ?? '',
-            'vote_average' => (float) $movie->vote_average,
-        ]);
-
-        // Get IDs from local results for deduplication
-        $localIds = $local->pluck('id')->toArray();
-
-        // Filter TMDB results to exclude already-present movies
-        $uniqueTmdb = $tmdbResults->filter(fn (array $movie): bool => ! in_array($movie['id'], $localIds, true));
-
-        // Merge: local first, then unique TMDB results
-        return $local->concat($uniqueTmdb)->take(20);
     }
 }
