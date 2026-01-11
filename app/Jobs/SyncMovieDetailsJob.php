@@ -3,10 +3,9 @@
 namespace App\Jobs;
 
 use App\Actions\SeedMovieFromTmdbAction;
+use App\Actions\SyncCastForMovieAction;
 use App\Actions\SyncGenresForMovieAction;
 use App\Models\Movie;
-use App\Models\MovieCast;
-use App\Models\Person;
 use App\Services\TmdbService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -38,8 +37,12 @@ class SyncMovieDetailsJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(TmdbService $tmdb, SeedMovieFromTmdbAction $seedMovie, SyncGenresForMovieAction $syncGenres): void
-    {
+    public function handle(
+        TmdbService $tmdb,
+        SeedMovieFromTmdbAction $seedMovie,
+        SyncGenresForMovieAction $syncGenres,
+        SyncCastForMovieAction $syncCast,
+    ): void {
         $movie = Movie::find($this->movieId);
 
         if ($movie === null) {
@@ -93,38 +96,8 @@ class SyncMovieDetailsJob implements ShouldQueue
         // Sync cast members (defensive for incomplete API responses)
         /** @var array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}> $castData */
         $castData = $details['cast'] ?? []; // @phpstan-ignore-line
-        $this->syncCast($movie, $castData);
+        $syncCast->handle($movie, $castData);
 
         Log::info("SyncMovieDetailsJob: Completed sync for movie '{$movie->title}'");
-    }
-
-    /**
-     * Sync cast members for the movie.
-     *
-     * @param  array<int, array{id: int, name: string, character: string, profile_path: ?string, order: int}>  $castData
-     */
-    private function syncCast(Movie $movie, array $castData): void
-    {
-        // Clear existing cast for this movie to avoid duplicates
-        MovieCast::where('movie_id', $movie->id)->delete();
-
-        foreach ($castData as $personData) {
-            // Upsert person
-            $person = Person::updateOrCreate(
-                ['tmdb_id' => $personData['id']],
-                [
-                    'name' => $personData['name'],
-                    'profile_path' => $personData['profile_path'],
-                ]
-            );
-
-            // Create cast entry
-            MovieCast::create([
-                'movie_id' => $movie->id,
-                'person_id' => $person->id,
-                'character' => $personData['character'],
-                'order' => $personData['order'],
-            ]);
-        }
     }
 }
